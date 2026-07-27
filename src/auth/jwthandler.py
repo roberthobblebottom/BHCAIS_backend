@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2
 from fastapi.security.utils import get_authorization_scheme_param
-from jose import JWTError, jwt
+from jose import  jwt
 # from tortoise.exceptions import DoesNotExist
 
 # from src.schemas.token import TokenData
