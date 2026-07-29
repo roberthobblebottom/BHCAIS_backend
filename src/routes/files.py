@@ -13,11 +13,10 @@ from ..constants import (
 
 router = APIRouter()
 
-
-@router.post("/files")
-async def create_file(file: Annotated[bytes, File()]):
-    print("/files")
-    return {"file_size": len(file)}
+# @router.post("/files")
+# async def create_file(file: Annotated[bytes, File()]):
+#     print("/files")
+#     return {"file_size": len(file)}
 
 
 @router.post("/uploadFiles")
@@ -28,6 +27,8 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()]):
         print("file:", file.filename)
         print(file)
         contents = await file.read()
+        catalog_name = ""
+
         if ".xlsx" in file.filename:
             df = pl.read_excel(contents, infer_schema_length=0)
         elif ".csv" in file.filename:
@@ -53,13 +54,26 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()]):
             and cols != negative_headers
             and cols != library_and_archives_header
         ):
-            print("here")
             raise HTTPException(
                 status_code=422,
                 detail="The file " + file.filename + "has incorrect or missing headers",
             )
+        if cols == print_headers:
+            catalog_name = "print"
+        elif cols == negative_headers:
+            catalog_name = "negative"
+        elif cols == oral_histories_headers:
+            catalog_name = "oral histories"
+        elif cols == library_and_archives_header:
+            catalog_name = "library and archives"
+        elif cols == slides_headers:
+            catalog_name = "slides"
+        else:
+            raise HTTPException(
+                status_code=422, details="unable to decipher the catalog type"
+            )
+        print("catalog_name", catalog_name)
         print(df.describe())
 
         results.append({"filename": file.filename})
-    print("results", results)
     return {"uploaded_files": results}
