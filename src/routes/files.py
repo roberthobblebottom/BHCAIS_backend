@@ -3,8 +3,9 @@ from typing import Annotated
 
 import polars as pl
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from src.db.connect_db import engine, text
 from sqlalchemy.exc import IntegrityError
+from src.db.connect_db import engine, text
+
 from ..constants import (
     library_and_archives_header,
     negative_headers,
@@ -65,15 +66,12 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
         if cols == print_headers:
             catalog_name = "print"
             # fields not inserted yet:
-            # object_condition,
-            # main_category,
             # colletor,
             #  taken_locality ,
             # repository_location ,
             # catalogued_by1 ,
             #   catalogued_by2 ,
             #   catalogued_by3 ,
-            #   access_level ,
             #   associated_negative_id ,
             # keywords,
 
@@ -81,14 +79,18 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 df.select(
                     "UID",
                     "Album no.",
+                    "Object Condition (QC1)",
                     "Album Information (OLD)",
                     "Album Information (New)",
                     "Photograph Information",
+                    "Main Category",
                     "Day",
                     "Month",
                     "Year",
                     "Fieldnotes",
+                    "Keywords",
                     "Date catalogued",
+                    "Access status",
                     "Remarks",
                     "Batch no.",
                 )
@@ -118,14 +120,18 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
             df_params.columns = [
                 "uid",
                 "Album no.",
+                "object_condition",
                 "Album Information (OLD)",
                 "Album Information (New)",
                 "photograph_label_info",
+                "main_category",
                 "taken_day",
                 "taken_month",
                 "taken_year",
                 "fieldnotes",
+                "keywords",
                 "date_catalogued",
+                "access_level",
                 "remarks",
                 "batch_number",
                 "upload_by",
@@ -167,13 +173,17 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                         text(
                             """INSERT INTO print (
                                 uid  ,
+                                object_condition,
                                 photograph_label_info ,
 
-                                taken_day ,
-                                taken_month ,
+                                main_category,
+                                    taken_day ,
+                                    taken_month ,
                                 taken_year ,
                                 fieldnotes ,
+                                keywords,
 
+                                access_level,
                                 remarks ,
                                 batch_number ,
                                 upload_by ,
@@ -182,20 +192,25 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 date_catalogued1 ,
                                 date_catalogued2 ,
                                 date_catalogued3 ,
-
                                 album 
+
+
                             )
                         VALUES
                             (
                               :uid  ,
+
+                                :object_condition,
                                 :photograph_label_info ,
 
+                                :main_category,
                                 :taken_day ,
                                 :taken_month ,
                                 :taken_year ,
                                 :fieldnotes ,
-
+                                :keywords,
                           
+                                :access_level,
                                 :remarks ,
                                 :batch_number ,
                                 :upload_by ,
@@ -203,6 +218,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 :date_catalogued1 ,
                                 :date_catalogued2 ,
                                 :date_catalogued3 ,
+                                
                                 :album
                             ) """
                         ),

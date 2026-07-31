@@ -1,10 +1,10 @@
-from sqlalchemy import create_engine, text
 import os
+
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
 
 load_dotenv()
-# connection = None
-# cursor = None
+
 engine = None
 try:
     engine = create_engine(
@@ -15,10 +15,6 @@ try:
         f"Connection to the {os.environ.get('host')} for user {os.environ.get('user')} created successfully."
     )
 
-    # connection = engine.begin()
-    # connection.begin()
-    # connection.autocommit = True
-    # with engine.connect() as connection:
     with engine.begin() as connection:
         connection.execute(text("SET search_path TO public"))
 
@@ -28,5 +24,5 @@ try:
         print("current database user:", results)
         print("connection", connection)
 
-except Exception as ex:
+except Exception as ex:  # noqa: BLE001
     print("Connection could not be made due to the following error:\n", ex["details"])
