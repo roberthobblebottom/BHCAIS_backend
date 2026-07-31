@@ -1,7 +1,7 @@
-from fastapi import HTTPException, Depends, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
-from src.db.connect_db import text, connection
+from src.db.connect_db import engine, text
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -17,14 +17,16 @@ def get_password_hash(password):
 async def get_user(
     username: str,
 ):
-    connection.execute(text("SET search_path TO public"))
-    result = connection.execute(
-        text("select email,salted_password from login_user WHERE email = :username;"),
-        [{"username": username}],
-    )
+    with engine.begin() as connection:
+        result = connection.execute(
+            text("""SELECT user_id, email,salted_password 
+        FROM login_user 
+        WHERE email = :username;"""),
+            [{"username": username}],
+        )
     result = result.all()
     if len(result) == 0:  # can't find email
-        raise Exception
+        raise Exception()  # noqa: TRY002
     print("db result", result)
 
     return result[0]  # first result
@@ -38,7 +40,8 @@ async def validate_user(user: OAuth2PasswordRequestForm = Depends()):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         ) from exc
-    if not verify_password(user.password, db_user[1]):
+    print(db_user)
+    if not verify_password(user.password, db_user[2]):  # salted_password from db
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",

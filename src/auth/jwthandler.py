@@ -2,18 +2,13 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional
 
+from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, Request
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2
 from fastapi.security.utils import get_authorization_scheme_param
-from jose import  jwt
-# from tortoise.exceptions import DoesNotExist
+from jose import jwt
 
-# from src.schemas.token import TokenData
-# from src.schemas.users import UserOutSchema
-# from src.database.models import Users
-
-from dotenv import load_dotenv
 load_dotenv()
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
 
@@ -63,12 +58,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + timedelta(minutes=15)
 
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, 
-                    JWT_SECRET_KEY,
-                    algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
 
     return encoded_jwt
-
 
 
 async def get_current_user(token: str = Depends(security)):
