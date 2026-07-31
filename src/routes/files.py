@@ -324,7 +324,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
 
                                 date_catalogued ,
                                 album,
-                                collector
+                                collector_id
 
                             )
                         VALUES
