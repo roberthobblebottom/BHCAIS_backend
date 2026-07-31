@@ -162,6 +162,8 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
             try:
                 with engine.begin() as connection:
                     # Collectors ---------------------------------------------
+
+                    # Insert new collector if it does not exist
                     for name in unique_collectors_names:
                         result = connection.execute(
                             text(
@@ -186,16 +188,18 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                     }
                                 ],
                             )
+
+                    # Get all people including collectors just added.
                     people = list(
                         connection.execute(
                             text("SELECT person_id, name_held FROM person")
                         ).all()
                     )
-                    # print(people)
+
+                    # change the collector_name into collector-id in params_dict
                     for x in params_dict:
                         hasChange = False
                         for unique_collector in people:
-                            print(people[1].name_held)
                             if (
                                 x["collector_name"] in people[1].name_held
                             ):  # name_held in people
@@ -205,8 +209,9 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                             if not hasChange:
                                 x["collector_id"] = None
                         del x["collector_name"]
-                        print(x["collector_id"])
+
                     # Locality --------------------------------------------------------
+                    # insert any new country locality into locality table
                     for locality in unique_country_names:
                         result = connection.execute(
                             text(
@@ -237,6 +242,8 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                     }
                                 ],
                             )
+
+                    # Get all countries even the one that are just added
                     countries = connection.execute(
                         text("""
                                 SELECT DISTINCT locality_id, locality_name
@@ -245,7 +252,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                     ).all()
                     # countries = [[locality id, locality name]] USE INDICES
 
-                    # --------- main locality logic -------
+                    # insert any new locality  into the locality table
                     for locality in (
                         unique_locality.iter_rows()
                     ):  # [locality (place name), country, gps coords ] USE INDICES
@@ -261,10 +268,14 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                             [{"locality_name": locality[0]}],
                         ).first()
                         if result is None:
+                            # add country_id into the new locality entry
                             country_id = -1
                             for c in countries:
-                                if c[1] == locality[1]:
+                                if (
+                                    c[1] == locality[1]
+                                ):  # locality_name on both side of the equation
                                     country_id = c[0]
+                            ###############################
                             connection.execute(
                                 text(
                                     """
@@ -284,13 +295,16 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                             )
 
                             # print("locality_id", locality_id)
+
+                    # get all localities including the ones just added
                     unique_locality = connection.execute(
                         text("SELECT DISTINCT locality_id,locality_name FROM locality")
                     ).all()
                     unique_locality = pl.DataFrame(
                         unique_locality, schema=["locality_id", "locality_name"]
                     )
-                    # print("unique_locality", unique_locality)
+
+                    # change locality name to locality id in params_dict
                     for x in params_dict:
                         hasChange = False
                         for l in unique_locality.iter_rows():
@@ -301,6 +315,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                         if not hasChange:
                             x["locality"] = None
 
+                    # Main insertion into print table
                     connection.execute(
                         text(
                             """INSERT INTO print (
