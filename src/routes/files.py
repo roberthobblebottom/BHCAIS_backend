@@ -24,8 +24,6 @@ router = APIRouter()
 
 @router.post("/uploadFiles")
 async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id: int):
-    print("/uploadfile")
-    print("user_id", user_id)
 
     results = []
     for file in files:
@@ -66,7 +64,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
         if cols == print_headers:
             catalog_name = "print"
             # fields not inserted yet:
-            #  taken_locality ,
+
             # repository_location ,
             # catalogued_by1 ,
             #   catalogued_by2 ,
@@ -75,8 +73,6 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
             # keywords,
             # taxonomy
             # common name
-            # Locality
-            # GPS coordinates
             # Location in LKCNHM
             df_params = df.select(
                 "UID",
@@ -138,9 +134,9 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 .filter(~pl.col("locality").str.to_lowercase().is_in(["nil", "na"]))
                 .unique()
             )
-            print("unique_collectors_names", unique_collectors_names)
-            print("unique_country_names", unique_country_names)
-            print("unique_locality", unique_locality)
+            # print("unique_collectors_names", unique_collectors_names)
+            # print("unique_country_names", unique_country_names)
+            # print("unique_locality", unique_locality)
             params_dict = df_params.to_dicts()
             album_json = [
                 json.dumps(
@@ -166,7 +162,6 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
             try:
                 with engine.begin() as connection:
                     # Collectors ---------------------------------------------
-                    unique_collectors = []
                     for name in unique_collectors_names:
                         result = connection.execute(
                             text(
@@ -191,19 +186,26 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                     }
                                 ],
                             )
-                            person_id = connection.execute(
-                                text("SELECT LASTVAL();")
-                            ).one()
-                            unique_collectors.append(
-                                {"person_id": person_id[0], "name_held": name}
-                            )
-                    print("unique_collectors", unique_collectors)
+                    people = list(
+                        connection.execute(
+                            text("SELECT person_id, name_held FROM person")
+                        ).all()
+                    )
+                    # print(people)
                     for x in params_dict:
-                        for unique_collector in unique_collectors:
-                            if x["collector_name"] == unique_collector["name_held"]:
-                                x["collector_id"] = unique_collector["person_id"]
+                        hasChange = False
+                        for unique_collector in people:
+                            print(people[1].name_held)
+                            if (
+                                x["collector_name"] in people[1].name_held
+                            ):  # name_held in people
+                                x["collector_id"] = people[0][0]  # persion_id in people
+                                hasChange = True
                                 break
-
+                            if not hasChange:
+                                x["collector_id"] = None
+                        del x["collector_name"]
+                        print(x["collector_id"])
                     # Locality --------------------------------------------------------
                     for locality in unique_country_names:
                         result = connection.execute(
@@ -242,12 +244,11 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 WHERE locality_rank = 'country';""")
                     ).all()
                     # countries = [[locality id, locality name]] USE INDICES
-                    print("countries", countries)
+
                     # --------- main locality logic -------
                     for locality in (
                         unique_locality.iter_rows()
                     ):  # [locality (place name), country, gps coords ] USE INDICES
-                        # print("locality", locality)
                         result = connection.execute(
                             text(
                                 """
@@ -259,7 +260,6 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                             ),
                             [{"locality_name": locality[0]}],
                         ).first()
-                        # print("result", result)
                         if result is None:
                             country_id = -1
                             for c in countries:
@@ -290,13 +290,10 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                     unique_locality = pl.DataFrame(
                         unique_locality, schema=["locality_id", "locality_name"]
                     )
-                    print("unique_locality", unique_locality)
+                    # print("unique_locality", unique_locality)
                     for x in params_dict:
-                        # print("x locality", x["locality"])
-                        original = x["locality"]
                         hasChange = False
                         for l in unique_locality.iter_rows():
-                            # print(x["locality"], l[0], l[-1])
                             if x["locality"] == l[1]:  # locality (name)
                                 x["locality"] = l[0]  # locality_id
                                 hasChange = True
@@ -304,9 +301,6 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                         if not hasChange:
                             x["locality"] = None
 
-                        # if x["locality"] == -1:
-                        #     print(x)
-                        # print("original", original, "update", x["locality"])
                     connection.execute(
                         text(
                             """INSERT INTO print (
@@ -315,7 +309,6 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 photograph_label_info ,
 
                                 main_category,
-                                collector,
                                     taken_day ,
                                     taken_month ,
                                 taken_year ,
@@ -330,7 +323,8 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 upload_date,
 
                                 date_catalogued ,
-                                album
+                                album,
+                                collector
 
                             )
                         VALUES
@@ -341,7 +335,6 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 :photograph_label_info ,
 
                                 :main_category,
-                                :collector_id,
                                 :taken_day ,
                                 :taken_month ,
                                 :taken_year ,
@@ -356,7 +349,9 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 :upload_date,
                                 :date_catalogued ,
 
-                                :album
+                                :album,
+
+                                :collector_id
                             ) """
                         ),
                         params_dict,
