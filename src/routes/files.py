@@ -4,7 +4,18 @@ from typing import Annotated
 import polars as pl
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from sqlalchemy.exc import IntegrityError
-from src.db.connect_db import engine, text
+from src.db.db_wrapper import (
+    engine,
+    find_if_locality_name_exists_in_db,
+    get_all_people_from_person_table,
+    get_unique_localities,
+    insert_into_locality,
+    insert_into_person_if_not_exist_in_name_held,
+    localities_params_dict_sorting_of_names_and_ids,
+    param_dict_sorting_of_names_and_id_for_interview_participants,
+    param_dict_sorting_of_names_and_ids,
+    text,
+)
 
 from ..constants import (
     library_and_archives_header,
@@ -61,15 +72,14 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 status_code=422,
                 detail="The file " + file.filename + "has incorrect or missing headers",
             )
+            #############################################
+            #############################################
+            #############################################
         if cols == print_headers:
             catalog_name = "print"
             # fields not inserted yet:
 
-            # catalogued_by1 ,
-            #   catalogued_by2 ,
-            #   catalogued_by3 ,
             #   associated_negative_id ,
-            # keywords,
             # taxonomy
             # common name
 
@@ -98,7 +108,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 "Remarks",
                 "Batch no.",
             ).with_columns(
-                upload_by=pl.lit(int(user_id)),
+                uploaded_by_user_of_id=pl.lit(int(user_id)),
                 upload_date=pl.lit("NOW()"),
             )
             df_params.columns = [
@@ -118,13 +128,13 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 "gps_coordinates",
                 "fieldnotes",
                 "keywords",
-                "repository_location",
+                "repository_location_id",
                 "catalogued_by_ids",
                 "dates_catalogued",
                 "access_level",
                 "remarks",
                 "batch_number",
-                "upload_by",
+                "uploaded_by_user_of_id",
                 "upload_date",
             ]  # renaming
             df_params = df_params.with_columns(
@@ -137,15 +147,14 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 df_params["catalogued_by_ids"].unique().to_list()
             )
             unique_country_names = df_params["country"].unique().to_list()
-            unique_locality = (
+            unique_localities = (
                 df_params["locality", "country", "gps_coordinates"]
                 .filter(~pl.col("locality").str.to_lowercase().is_in(["nil", "na"]))
                 .unique()
             )
-            unique_repository_locations = (
-                df_params["repository_location"].unique().to_list()
+            unique_repository_location_ids = (
+                df_params["repository_location_id"].unique().to_list()
             )
-            # print("cataloged by ids", df_params["catalogued_by_ids"])
             params_dict = df_params.to_dicts()
             album_json = [
                 json.dumps(
@@ -170,164 +179,78 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 del dic["gps_coordinates"]
             try:
                 with engine.begin() as connection:
-                    # Collectors ---------------------------------------------
+                    # Collectors and catalogurs ---------------------------------------------
 
-                    # Insert new collector if it does not exist
                     for name in unique_collectors_names:
-                        result = connection.execute(
-                            text(
-                                "SELECT 1 FROM person WHERE :name=ANY(name_held) LIMIT 1;"
-                            ),
-                            [{"name": name}],
-                        ).first()
+                        insert_into_person_if_not_exist_in_name_held(
+                            name, user_id, connection
+                        )
 
-                        if result is None:
-                            connection.execute(
-                                text(
-                                    """
-                                    INSERT INTO person (name_held,upload_by,upload_date)
-                                    VALUES (ARRAY [:name_held],:upload_by,:upload_date)
-                                    """
-                                ),
-                                [
-                                    {
-                                        "name_held": name,
-                                        "upload_by": user_id,
-                                        "upload_date": "NOW()",
-                                    }
-                                ],
-                            )
-
-                    # Insert new cataloguers if it doesn't exist
-                    for names in unique_sets_of_cataloguer_names:
-                        for name in names:
-                            result = connection.execute(
-                                text(
-                                    "SELECT 1 FROM person WHERE :name=ANY(name_held) LIMIT 1;"
-                                ),
-                                [{"name": name}],
-                            ).first()
-                            print("asdfasdf", result, name)
-                            if result is None:
-                                connection.execute(
-                                    text(
-                                        """
-                                        INSERT INTO person (name_held,upload_by,upload_date)
-                                        VALUES (ARRAY [:name_held],:upload_by,:upload_date)
-                                        """
-                                    ),
-                                    [
-                                        {
-                                            "name_held": name,
-                                            "upload_by": user_id,
-                                            "upload_date": "NOW()",
-                                        }
-                                    ],
-                                )
+                    for name in unique_sets_of_cataloguer_names:
+                        insert_into_person_if_not_exist_in_name_held(
+                            name, user_id, connection
+                        )
 
                     # Get all people including collectors just added.
-                    people = list(
-                        connection.execute(
-                            text("SELECT person_id, name_held FROM person")
-                        ).all()
-                    )
-                    print("people", people)
-                    # change the collector_name into collector-id in params_dict
-                    for x in params_dict:
-                        hasCollectorByIdChanged = False
-                        hasCataloguersByIDsChanged = False
+                    people = get_all_people_from_person_table(connection)
 
+                    # change the collector_name into collector-id in params_dict and catagoluers_name into cataloger_ids in params_dict
+                    param_dict_sorting_of_names_and_ids(
+                        params_dict,
+                        people,
+                        "collector_name",
+                        "collector_id",
+                        connection,
+                    )
+
+                    for x in params_dict:
+                        hasCataloguersByIDsChanged = False
                         new_catalogued_by_ids = []
                         for person in people:
-                            if (
-                                x["collector_name"] in person[1]
-                                # 1 index points to name_held in person
-                            ):  # name_held in people
-                                x["collector_id"] = person[0]  # persion_id in people
-                                hasCollectorByIdChanged = True
-
                             for cataloguer_name in x["catalogued_by_ids"]:
-                                # currently catalogued_by_ids is holding cataloguers' names
-                                print("cataloguer_name", cataloguer_name)
-                                print(person[1])
-                                if cataloguer_name in person[1]:
-                                    print("here")
+                                if cataloguer_name not in person[1]:
                                     # 1 index points to name_held in person
                                     new_catalogued_by_ids.append(
                                         person[0]
                                     )  # persion_id in people
                                     hasCataloguersByIDsChanged = True
-                            print("new_catalogued_by_ids", new_catalogued_by_ids)
                         x["catalogued_by_ids"] = (
                             new_catalogued_by_ids
                             if hasCataloguersByIDsChanged
                             else None
                         )
-                        print("catalogued by ids", x["catalogued_by_ids"])
-                        if not hasCollectorByIdChanged:
-                            x["collector_id"] = None
-                        del x["collector_name"]
 
                     # Locality --------------------------------------------------------
                     # insert any new country locality into locality table
                     for locality in unique_country_names:
-                        result = connection.execute(
-                            text(
-                                """
-                                SELECT 1
-                                FROM locality
-                                WHERE locality_name = :locality_name
-                                LIMIT 1;
-                                """
-                            ),
-                            [{"locality_name": locality}],
-                        ).first()
-
+                        result = find_if_locality_name_exists_in_db(
+                            locality, connection
+                        )
                         if result is None:
-                            connection.execute(
-                                text(
-                                    """
-                                    INSERT INTO locality (locality_name,locality_rank,upload_by,upload_date)
-                                    VALUES (:locality_name,:locality_rank,:upload_by,:upload_date)
-                                    """
-                                ),
-                                [
-                                    {
-                                        "locality_name": locality,
-                                        "locality_rank": "country",
-                                        "upload_by": user_id,
-                                        "upload_date": "NOW()",
-                                    }
-                                ],
+                            insert_into_locality(
+                                {
+                                    "locality_name": locality,
+                                    "locality_rank": "country",
+                                    "parent_locality": None,
+                                    "uploaded_by_user_of_id": user_id,
+                                    "upload_date": "NOW()",
+                                },
+                                connection,
                             )
 
                     # Get all countries even the one that are just added
-                    countries = connection.execute(
-                        text("""
-                                SELECT DISTINCT locality_id, locality_name
-                                FROM locality
-                                WHERE locality_rank = 'country';""")
-                    ).all()
+                    countries = get_unique_localities(
+                        where="WHERE locality_rank = 'country'", connection=connection
+                    )
                     # countries = [[locality id, locality name]] USE INDICES
-
                     # insert any new locality  into the locality table
                     for locality in (
-                        unique_locality.iter_rows()
+                        unique_localities.iter_rows()
                     ):  # [locality (place name), country, gps coords ] USE INDICES
-                        result = connection.execute(
-                            text(
-                                """
-                                SELECT 1
-                                FROM locality
-                                WHERE locality_name = :locality_name
-                                LIMIT 1;
-                                """
-                            ),
-                            [{"locality_name": locality[0]}],
-                        ).first()
+                        result = find_if_locality_name_exists_in_db(
+                            locality[0], connection
+                        )
                         if result is None:
-                            # add country_id into the new locality entry
-
                             # get all country id in roles for specific locations insertion entries to be inserted right below
                             country_id = -1
                             for c in countries:
@@ -335,85 +258,54 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                     c[1] == locality[1]
                                 ):  # locality_name on both side of the equation
                                     country_id = c[0]
-                            ###############################
-                            connection.execute(
-                                text(
-                                    """
-                                    INSERT INTO locality (locality_name,locality_rank,parent_locality,upload_by,upload_date)
-                                    VALUES (:locality_name,:locality_rank,:parent_locality,:upload_by,:upload_date)
-                                    """
-                                ),
-                                [
-                                    {
-                                        "locality_name": locality[0],
-                                        "locality_rank": "place",
-                                        "parent_locality": country_id,
-                                        "upload_by": user_id,
-                                        "upload_date": "NOW()",
-                                    }
-                                ],
-                            )
-
-                            # print("locality_id", locality_id)
+                                ###############################
+                                (
+                                    insert_into_locality(
+                                        {
+                                            "locality_name": locality[0],
+                                            "locality_rank": "place",
+                                            "parent_locality": country_id,
+                                            "uploaded_by_user_of_id": user_id,
+                                            "upload_date": "NOW()",
+                                        },
+                                        connection,
+                                    ),
+                                )
 
                     # insert any new repository locations
-                    for locality in unique_repository_locations:
-                        print("location name", locality)
-                        result = connection.execute(
-                            text(
-                                """
-                                SELECT 1
-                                FROM locality
-                                WHERE locality_name = :locality_name
-                                LIMIT 1;
-                                """
-                            ),
-                            [{"locality_name": locality}],
-                        ).first()
+                    for locality in unique_repository_location_ids:
+                        result = find_if_locality_name_exists_in_db(
+                            locality, connection
+                        )
                         if result is None:
-                            print("result is None")
-                            connection.execute(
-                                text(
-                                    """
-                                    INSERT INTO locality (locality_name,locality_rank,parent_locality,upload_by,upload_date)
-                                    VALUES (:locality_name,:locality_rank,:parent_locality,:upload_by,:upload_date)
-                                    """
-                                ),
-                                [
-                                    {
-                                        "locality_name": locality,
-                                        "locality_rank": "place",
-                                        "parent_locality": 2,  # For NUS
-                                        "upload_by": user_id,
-                                        "upload_date": "NOW()",
-                                    }
-                                ],
+                            insert_into_locality(
+                                {
+                                    "locality_name": locality,
+                                    "locality_rank": "repository location",
+                                    "parent_locality": 2,  # For NUS
+                                    "uploaded_by_user_of_id": user_id,
+                                    "upload_date": "NOW()",
+                                },
+                                connection,
                             )
+
                     # get all localities including the ones just added
-                    unique_locality = connection.execute(
-                        text("SELECT DISTINCT locality_id,locality_name FROM locality")
-                    ).all()
-                    unique_locality = pl.DataFrame(
-                        unique_locality, schema=["locality_id", "locality_name"]
+                    unique_localities = get_unique_localities(connection=connection)
+                    unique_localities = pl.DataFrame(
+                        unique_localities, schema=["locality_id", "locality_name"]
                     )
 
-                    # change locality name to locality id for "locality" in params_dict
-                    for x in params_dict:
-                        hasCollectorByIdChanged = False
-                        hasRepositoryLocationChanged = False
-                        for l in unique_locality.iter_rows():
-                            if x["locality"] == l[1]:  # locality (name)
-                                x["locality"] = l[0]  # locality_id
-                                hasCollectorByIdChanged = True
-                                # break
-                            if x["repository_location"] == l[1]:
-                                x["repository_location"] = l[0]
-                                hasRepositoryLocationChanged = True
-
-                        if not hasCollectorByIdChanged:
-                            x["locality"] = None
-                        if not hasRepositoryLocationChanged:
-                            x["repository_location"] = None
+                    # change locality name to locality id for "locality" and "repository_locality" in params_dict
+                    localities_params_dict_sorting_of_names_and_ids(
+                        params_dict, people, unique_localities, "locality", connection
+                    )
+                    localities_params_dict_sorting_of_names_and_ids(
+                        params_dict,
+                        people,
+                        unique_localities,
+                        "repository_location_id",
+                        connection,
+                    )
 
                     # Main insertion into print table
                     connection.execute(
@@ -426,15 +318,15 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 taken_day ,
                                 taken_month ,
                                 taken_year ,
-                                taken_locality,
+                                taken_locality_id,
                                 fieldnotes ,
                                 keywords,
 
-                               repository_location, 
+                               repository_location_id, 
                                 access_level,
                                 remarks ,
                                 batch_number ,
-                                upload_by ,
+                                uploaded_by_user_of_id ,
                                 upload_date,
                                 catalogued_by_ids,
                                 dates_catalogued ,
@@ -453,11 +345,11 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                             :locality,
                             :fieldnotes ,
                             :keywords,
-                            :repository_location,
+                            :repository_location_id,
                             :access_level,
                             :remarks ,
                             :batch_number ,
-                            :upload_by ,
+                            :uploaded_by_user_of_id ,
                             :upload_date,
                             
                             :catalogued_by_ids,
@@ -484,8 +376,206 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 )
         elif cols == negative_headers:
             catalog_name = "negative"
+        #############################################
+        #############################################
+        #############################################
         elif cols == oral_histories_headers:
             catalog_name = "oral histories"
+            df_params = df.select(
+                "S/N",
+                "Name of Interviewee",
+                "Name of Interviewee (2)",
+                "Recording Date (DD/MM/YYYY)",
+                "Track Number",
+                "Total Tracks",
+                "Running Time",
+                "File name",
+                "Format (Original File)",
+                "Access Conditions",
+                "Access Remarks",
+                "Transcription Status",
+                "Editing Remarks",
+                "Vetted for Access?",
+                "Accession Status",
+                "Languages",
+                "Keywords",
+                "Interview Location",
+                "Interviewers",
+                "Associated Materials",
+                "Catalogued By",
+                "Catalogue Date",
+                "Comments",
+            ).with_columns(
+                uploaded_by_user_of_id=pl.lit(int(user_id)),
+                upload_date=pl.lit("NOW()"),
+            )
+            df_params.columns = [
+                "sn",
+                "name_of_interviewee1",
+                "name_of_interviewee2",
+                "recording_date",
+                "track_number",
+                "total_track",
+                "total_run_time",
+                "interview_name",
+                "file_format",
+                "access_condition",
+                "access_remarks",
+                "transcription_status",
+                "track_editing_remark",
+                "was_vetted_for_access",
+                "accession_status",
+                "primary_language",
+                "keywords",
+                "interview_location_id",
+                "interviewer_names",
+                "associated_materials",
+                "catalogued_by",
+                "catalogue_date",
+                "comments",
+                "uploaded_by_user_of_id",
+                "upload_date",
+            ]  # renaming
+
+            df_params = df_params.with_columns(
+                interviewer_names=pl.col("interviewer_names")
+                .str.strip_chars()
+                .str.split("||"),
+                interviewee_names=pl.concat_list(
+                    "name_of_interviewee1", "name_of_interviewee2"
+                ),
+            )
+            params_dict = df_params.to_dicts()
+
+            unique_interviewer_names = (
+                df_params["interviewer_names"].explode().unique().to_list()
+            )
+            unique_interviewee_names = (
+                df_params["interviewee_names"].explode().unique().to_list()
+            )
+            unique_interview_participant_names = (
+                unique_interviewee_names + unique_interviewer_names
+            )
+            unique_interview_participant_names = [
+                x for x in unique_interview_participant_names if x is not None
+            ]
+            unique_localities = (
+                df_params.filter(pl.col("interview_location_id").is_not_null())[
+                    "interview_location_id"
+                ]
+                .unique()
+                .to_list()
+            )
+
+            try:
+                with engine.begin() as connection:
+                    # Insert new interviewers if it does not exist
+                    for name in unique_interview_participant_names:
+                        insert_into_person_if_not_exist_in_name_held(
+                            name, user_id, connection
+                        )
+                    people = get_all_people_from_person_table(connection)
+
+                    param_dict_sorting_of_names_and_id_for_interview_participants(
+                        params_dict,
+                        people,
+                        "interviewee_names",
+                        "interviewee_ids",
+                        connection,
+                    )
+                    param_dict_sorting_of_names_and_id_for_interview_participants(
+                        params_dict,
+                        people,
+                        "interviewer_names",
+                        "interviewer_ids",
+                        connection,
+                    )
+
+                    # splitting interviewee ids into 2:
+                    for x in params_dict:
+                        if x["interviewee_ids"] == None:
+                            continue
+                        x["interviewee_id1"] = x["interviewee_ids"][0]
+                        x["interviewee_id2"] = (
+                            x["interviewee_ids"][1]
+                            if len(x["interviewee_ids"]) == 2
+                            else None
+                        )
+
+                    # locality
+                    for locality in unique_localities:
+                        results = find_if_locality_name_exists_in_db(
+                            locality, connection
+                        )
+                        if results is None:
+                            insert_into_locality(
+                                {
+                                    "locality_name": locality,
+                                    "locality_rank": "place",
+                                    "parent_locality": None,
+                                    "uploaded_by_user_of_id": user_id,
+                                    "upload_date": "NOW()",
+                                },
+                                connection,
+                            )
+
+                    unique_localities = pl.DataFrame(
+                        get_unique_localities(where=None, connection=connection),
+                    )
+
+                    # change locality name to locality id for "locality" and "repository_locality" in params_dict
+                    localities_params_dict_sorting_of_names_and_ids(
+                        params_dict,
+                        people,
+                        unique_localities,
+                        "interview_location_id",
+                        connection,
+                    )
+
+                    # Main insertion into Oral table table
+                    connection.execute(
+                        text(
+                            """INSERT INTO oral_history (
+                   
+                            interviewee_id1 ,
+                            interviewee_id2 ,
+                            recording_date ,
+                            total_track ,
+                            total_run_time ,
+                            access_condition ,
+                            access_remarks ,
+                            primary_language ,
+                            interview_location_id ,
+                            interviewer_ids,
+                            comments ,
+                            uploaded_by_user_of_id ,
+                            upload_date,
+                            interview_name
+                            )
+                        VALUES
+                            (
+                            :interviewee_id1 ,
+                            :interviewee_id2 ,
+                            :recording_date ,
+                            :total_track ,
+                            :total_run_time ,
+                            :access_condition ,
+                            :access_remarks ,
+                            :primary_language ,
+                            :interview_location_id ,
+                            :interviewer_ids,
+                            :comments ,
+                            :uploaded_by_user_of_id ,
+                            :upload_date     ,
+                            :interview_name            
+                            ) """
+                        ),
+                        params_dict,
+                    )
+
+            except IntegrityError as e:
+                pass
+
         elif cols == library_and_archives_header:
             catalog_name = "library and archives"
         elif cols == slides_headers:
@@ -497,6 +587,6 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
 
         # print("catalog_name", catalog_name)
         # print(df.describe())
-
+        results = []
         results.append({"filename": file.filename})
     return {"uploaded_files": results}

@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
-from src.db.connect_db import engine, text
+from src.db.db_wrapper import engine, text
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
