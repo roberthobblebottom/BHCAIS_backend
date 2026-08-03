@@ -92,6 +92,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 "Fieldnotes",
                 "Keywords",
                 "Location in LKCNHM",
+                "Catalogued by",
                 "Date catalogued",
                 "Access status",
                 "Remarks",
@@ -118,7 +119,8 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 "fieldnotes",
                 "keywords",
                 "repository_location",
-                "date_catalogued",
+                "catalogued_by_ids",
+                "dates_catalogued",
                 "access_level",
                 "remarks",
                 "batch_number",
@@ -126,10 +128,14 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 "upload_date",
             ]  # renaming
             df_params = df_params.with_columns(
-                pl.col("date_catalogued").str.split("||")
+                pl.col("dates_catalogued").str.strip_chars().str.split("||"),
+                pl.col("catalogued_by_ids").str.strip_chars().str.split("||"),
             )
 
             unique_collectors_names = df_params["collector_name"].unique().to_list()
+            unique_sets_of_cataloguer_names = (
+                df_params["catalogued_by_ids"].unique().to_list()
+            )
             unique_country_names = df_params["country"].unique().to_list()
             unique_locality = (
                 df_params["locality", "country", "gps_coordinates"]
@@ -139,9 +145,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
             unique_repository_locations = (
                 df_params["repository_location"].unique().to_list()
             )
-            # print("unique_collectors_names", unique_collectors_names)
-            # print("unique_country_names", unique_country_names)
-            # print("unique_locality", unique_locality)
+            # print("cataloged by ids", df_params["catalogued_by_ids"])
             params_dict = df_params.to_dicts()
             album_json = [
                 json.dumps(
@@ -194,25 +198,74 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 ],
                             )
 
+                    # Insert new cataloguers if it doesn't exist
+                    for names in unique_sets_of_cataloguer_names:
+                        for name in names:
+                            result = connection.execute(
+                                text(
+                                    "SELECT 1 FROM person WHERE :name=ANY(name_held) LIMIT 1;"
+                                ),
+                                [{"name": name}],
+                            ).first()
+                            print("asdfasdf", result, name)
+                            if result is None:
+                                connection.execute(
+                                    text(
+                                        """
+                                        INSERT INTO person (name_held,upload_by,upload_date)
+                                        VALUES (ARRAY [:name_held],:upload_by,:upload_date)
+                                        """
+                                    ),
+                                    [
+                                        {
+                                            "name_held": name,
+                                            "upload_by": user_id,
+                                            "upload_date": "NOW()",
+                                        }
+                                    ],
+                                )
+
                     # Get all people including collectors just added.
                     people = list(
                         connection.execute(
                             text("SELECT person_id, name_held FROM person")
                         ).all()
                     )
-
+                    print("people", people)
                     # change the collector_name into collector-id in params_dict
                     for x in params_dict:
-                        hasLocalityChanged = False
-                        for unique_collector in people:
+                        hasCollectorByIdChanged = False
+                        hasCataloguersByIDsChanged = False
+
+                        new_catalogued_by_ids = []
+                        for person in people:
                             if (
-                                x["collector_name"] in people[1].name_held
+                                x["collector_name"] in person[1]
+                                # 1 index points to name_held in person
                             ):  # name_held in people
-                                x["collector_id"] = people[0][0]  # persion_id in people
-                                hasLocalityChanged = True
-                                break
-                            if not hasLocalityChanged:
-                                x["collector_id"] = None
+                                x["collector_id"] = person[0]  # persion_id in people
+                                hasCollectorByIdChanged = True
+
+                            for cataloguer_name in x["catalogued_by_ids"]:
+                                # currently catalogued_by_ids is holding cataloguers' names
+                                print("cataloguer_name", cataloguer_name)
+                                print(person[1])
+                                if cataloguer_name in person[1]:
+                                    print("here")
+                                    # 1 index points to name_held in person
+                                    new_catalogued_by_ids.append(
+                                        person[0]
+                                    )  # persion_id in people
+                                    hasCataloguersByIDsChanged = True
+                            print("new_catalogued_by_ids", new_catalogued_by_ids)
+                        x["catalogued_by_ids"] = (
+                            new_catalogued_by_ids
+                            if hasCataloguersByIDsChanged
+                            else None
+                        )
+                        print("catalogued by ids", x["catalogued_by_ids"])
+                        if not hasCollectorByIdChanged:
+                            x["collector_id"] = None
                         del x["collector_name"]
 
                     # Locality --------------------------------------------------------
@@ -346,18 +399,18 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
 
                     # change locality name to locality id for "locality" in params_dict
                     for x in params_dict:
-                        hasLocalityChanged = False
+                        hasCollectorByIdChanged = False
                         hasRepositoryLocationChanged = False
                         for l in unique_locality.iter_rows():
                             if x["locality"] == l[1]:  # locality (name)
                                 x["locality"] = l[0]  # locality_id
-                                hasLocalityChanged = True
+                                hasCollectorByIdChanged = True
                                 # break
                             if x["repository_location"] == l[1]:
                                 x["repository_location"] = l[0]
                                 hasRepositoryLocationChanged = True
 
-                        if not hasLocalityChanged:
+                        if not hasCollectorByIdChanged:
                             x["locality"] = None
                         if not hasRepositoryLocationChanged:
                             x["repository_location"] = None
@@ -383,7 +436,8 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 batch_number ,
                                 upload_by ,
                                 upload_date,
-                                date_catalogued ,
+                                catalogued_by_ids,
+                                dates_catalogued ,
                                 album,
                                 collector_id
                             )
@@ -406,7 +460,8 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                             :upload_by ,
                             :upload_date,
                             
-                            :date_catalogued ,
+                            :catalogued_by_ids,
+                            :dates_catalogued ,
                             :album,
                             :collector_id
                             ) """
