@@ -65,7 +65,6 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
             catalog_name = "print"
             # fields not inserted yet:
 
-            # repository_location ,
             # catalogued_by1 ,
             #   catalogued_by2 ,
             #   catalogued_by3 ,
@@ -73,6 +72,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
             # keywords,
             # taxonomy
             # common name
+
             # Location in LKCNHM
             df_params = df.select(
                 "UID",
@@ -91,6 +91,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 "GPS Coordinates",
                 "Fieldnotes",
                 "Keywords",
+                "Location in LKCNHM",
                 "Date catalogued",
                 "Access status",
                 "Remarks",
@@ -116,6 +117,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 "gps_coordinates",
                 "fieldnotes",
                 "keywords",
+                "repository_location",
                 "date_catalogued",
                 "access_level",
                 "remarks",
@@ -133,6 +135,9 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 df_params["locality", "country", "gps_coordinates"]
                 .filter(~pl.col("locality").str.to_lowercase().is_in(["nil", "na"]))
                 .unique()
+            )
+            unique_repository_locations = (
+                df_params["repository_location"].unique().to_list()
             )
             # print("unique_collectors_names", unique_collectors_names)
             # print("unique_country_names", unique_country_names)
@@ -198,15 +203,15 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
 
                     # change the collector_name into collector-id in params_dict
                     for x in params_dict:
-                        hasChange = False
+                        hasLocalityChanged = False
                         for unique_collector in people:
                             if (
                                 x["collector_name"] in people[1].name_held
                             ):  # name_held in people
                                 x["collector_id"] = people[0][0]  # persion_id in people
-                                hasChange = True
+                                hasLocalityChanged = True
                                 break
-                            if not hasChange:
+                            if not hasLocalityChanged:
                                 x["collector_id"] = None
                         del x["collector_name"]
 
@@ -269,6 +274,8 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                         ).first()
                         if result is None:
                             # add country_id into the new locality entry
+
+                            # get all country id in roles for specific locations insertion entries to be inserted right below
                             country_id = -1
                             for c in countries:
                                 if (
@@ -296,6 +303,39 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
 
                             # print("locality_id", locality_id)
 
+                    # insert any new repository locations
+                    for locality in unique_repository_locations:
+                        print("location name", locality)
+                        result = connection.execute(
+                            text(
+                                """
+                                SELECT 1
+                                FROM locality
+                                WHERE locality_name = :locality_name
+                                LIMIT 1;
+                                """
+                            ),
+                            [{"locality_name": locality}],
+                        ).first()
+                        if result is None:
+                            print("result is None")
+                            connection.execute(
+                                text(
+                                    """
+                                    INSERT INTO locality (locality_name,locality_rank,parent_locality,upload_by,upload_date)
+                                    VALUES (:locality_name,:locality_rank,:parent_locality,:upload_by,:upload_date)
+                                    """
+                                ),
+                                [
+                                    {
+                                        "locality_name": locality,
+                                        "locality_rank": "place",
+                                        "parent_locality": 2,  # For NUS
+                                        "upload_by": user_id,
+                                        "upload_date": "NOW()",
+                                    }
+                                ],
+                            )
                     # get all localities including the ones just added
                     unique_locality = connection.execute(
                         text("SELECT DISTINCT locality_id,locality_name FROM locality")
@@ -304,16 +344,23 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                         unique_locality, schema=["locality_id", "locality_name"]
                     )
 
-                    # change locality name to locality id in params_dict
+                    # change locality name to locality id for "locality" in params_dict
                     for x in params_dict:
-                        hasChange = False
+                        hasLocalityChanged = False
+                        hasRepositoryLocationChanged = False
                         for l in unique_locality.iter_rows():
                             if x["locality"] == l[1]:  # locality (name)
                                 x["locality"] = l[0]  # locality_id
-                                hasChange = True
-                                break
-                        if not hasChange:
+                                hasLocalityChanged = True
+                                # break
+                            if x["repository_location"] == l[1]:
+                                x["repository_location"] = l[0]
+                                hasRepositoryLocationChanged = True
+
+                        if not hasLocalityChanged:
                             x["locality"] = None
+                        if not hasRepositoryLocationChanged:
+                            x["repository_location"] = None
 
                     # Main insertion into print table
                     connection.execute(
@@ -322,51 +369,46 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 uid  ,
                                 object_condition,
                                 photograph_label_info ,
-
                                 main_category,
-                                    taken_day ,
-                                    taken_month ,
+                                taken_day ,
+                                taken_month ,
                                 taken_year ,
                                 taken_locality,
                                 fieldnotes ,
                                 keywords,
 
+                               repository_location, 
                                 access_level,
                                 remarks ,
                                 batch_number ,
                                 upload_by ,
                                 upload_date,
-
                                 date_catalogued ,
                                 album,
                                 collector_id
-
                             )
                         VALUES
                             (
                               :uid  ,
-
-                                :object_condition,
-                                :photograph_label_info ,
-
-                                :main_category,
-                                :taken_day ,
-                                :taken_month ,
-                                :taken_year ,
-                                :locality,
-                                :fieldnotes ,
-                                :keywords,
-
-                                :access_level,
-                                :remarks ,
-                                :batch_number ,
-                                :upload_by ,
-                                :upload_date,
-                                :date_catalogued ,
-
-                                :album,
-
-                                :collector_id
+                            :object_condition,
+                            :photograph_label_info ,
+                            :main_category,
+                            :taken_day ,
+                            :taken_month ,
+                            :taken_year ,
+                            :locality,
+                            :fieldnotes ,
+                            :keywords,
+                            :repository_location,
+                            :access_level,
+                            :remarks ,
+                            :batch_number ,
+                            :upload_by ,
+                            :upload_date,
+                            
+                            :date_catalogued ,
+                            :album,
+                            :collector_id
                             ) """
                         ),
                         params_dict,
