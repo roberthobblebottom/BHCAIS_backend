@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
+import polars as pl
 
 load_dotenv()
 
@@ -40,9 +41,9 @@ def insert_into_person_if_not_exist_in_name_held(names, user_id, connection):
             connection.execute(
                 text(
                     """
-                                        INSERT INTO person (name_held,uploaded_by_user_of_id,upload_date)
-                                        VALUES (ARRAY [:name_held],:uploaded_by_user_of_id,:upload_date)
-                                            """
+    INSERT INTO person (name_held,uploaded_by_user_of_id,upload_date)
+    VALUES (ARRAY [:name_held],:uploaded_by_user_of_id,:upload_date)
+        """
                 ),
                 [
                     {
@@ -58,18 +59,20 @@ def insert_into_locality(params, connection):
     connection.execute(
         text(
             """
-                                    INSERT INTO locality (locality_name,locality_rank,parent_locality,uploaded_by_user_of_id,upload_date)
-                                    VALUES (:locality_name,:locality_rank,:parent_locality,:uploaded_by_user_of_id,:upload_date)
-                                    """
+                INSERT INTO locality 
+                (locality_name,locality_rank,parent_locality,uploaded_by_user_of_id,upload_date)
+                VALUES 
+                (:locality_name,:locality_rank,:parent_locality,:uploaded_by_user_of_id,:upload_date)
+            """
         ),
         [params],
     )
 
 
 def get_all_people_from_person_table(connection):
-    return list(
-        connection.execute(text("SELECT person_id, name_held FROM person")).all()
-    )
+    return pl.DataFrame(
+        list(connection.execute(text("SELECT person_id, name_held FROM person")).all())
+    ).explode("name_held")
 
 
 def get_unique_localities(where=None, connection=None):
@@ -77,76 +80,66 @@ def get_unique_localities(where=None, connection=None):
     return connection.execute(text(sql if where is None else sql + where)).all()
 
 
-# only used once in files.py
-def param_dict_sorting_of_names_and_ids(
-    params_dict: dict,
-    people: list,
-    column_name_for_person_name: str,
-    column_name_for_person_id: str,
-    connection,
+def df_params_sorting_of_names_and_ids(
+    df_params: pl.DataFrame,
+    df2: pl.DataFrame,
+    prefix=str,
+    join_on_column=str,
+    prefix2_for_join=str,
 ):
-    # print("params dict ", params_dict)
-    for x in params_dict:
-        hasChanged = False
-        for person in people:
-            # print(x[column_name_for_person_name], person[1])
-            if (
-                x[column_name_for_person_name] in person[1]
-                # 1 index points to name_held in person
-            ):  # name_held in people
-                # print("person 0", person[0])
-                x[column_name_for_person_id] = person[0]  # persion_id in people
-                hasChanged = True
-
-        if not hasChanged:
-            x[column_name_for_person_id] = None
-        del x[column_name_for_person_name]
+    df_params = (
+        df_params.rename({prefix + "_name": join_on_column})
+        .join(df2, join_on_column, how="left")
+        .rename({prefix2_for_join + "_id": prefix + "_id"})
+        .drop(join_on_column)
+    )
+    return df_params
 
 
 def localities_params_dict_sorting_of_names_and_ids(
-    params_dict, people, unique_localities, column_name_for_locality, connection
+    df_params: pl.DataFrame, unique_localities, column_name_for_locality
 ):
-    for x in params_dict:
-        hasChanged = False
-        for l in unique_localities.iter_rows():
-            if x[column_name_for_locality] == l[1]:  # locality (name)
-                x[column_name_for_locality] = l[0]  # locality_id
-                hasChanged = True
-                # break
-
-        if not hasChanged:
-            x[column_name_for_locality] = None
+    df_params = (
+        df_params.rename({column_name_for_locality: "locality_name"})
+        .join(unique_localities, "locality_name", how="left")
+        .drop("locality_name")
+        .rename({"locality_id": column_name_for_locality})
+    )
+    return df_params
 
 
-def param_dict_sorting_of_names_and_id_for_interview_participants(
-    params_dict,
+def df_params_sorting_of_names_and_id_in_list_fields(
+    df_params: pl.DataFrame,
     people,
-    column_name_for_interview_participant_name,
-    column_name_for_interview_participant_id,
-    connection,
+    person_type,
+    column_to_be_filtered: str,  # name_held
+    column_to_be_extracted: str,  # person_id
 ):
-    for x in params_dict:
-        hasChanged = False
-        new_interview_participant_ids = []
-        if x[column_name_for_interview_participant_name] == None:
-            x[column_name_for_interview_participant_id] = None
-            continue
-        for person in people:
-            for ip in x[column_name_for_interview_participant_name]:
-                if (
-                    ip in person[1]
-                    # 1 index points to name_held in person
-                ):
-                    # print("person 0", person[0])
-                    new_interview_participant_ids.append(
-                        person[0]
-                    )  # persion_id in people
-                    hasChanged = True
 
-        x[column_name_for_interview_participant_id] = (
-            new_interview_participant_ids if hasChanged else None
+    def fun_(x):
+        arr = []
+        for x1 in x:
+            print(
+                people.filter(pl.col(column_to_be_filtered) == x1),
+                column_to_be_filtered,
+                column_to_be_extracted,
+            )
+            t = people.filter(pl.col(column_to_be_filtered) == x1)[
+                column_to_be_extracted
+            ].to_list()
+            if len(t) != 0:
+                arr.extend([int(t1) for t1 in t])
+        print(
+            "arr",
+            arr,
         )
-        del x[column_name_for_interview_participant_name]
+        return arr
+
+    return df_params.with_columns(
+        pl.col(person_type + "_names")
+        .map_elements(fun_, pl.List(pl.Int16))
+        .alias(person_type + "_ids")
+    )
 
 
 def find_if_locality_name_exists_in_db(locality, connection):

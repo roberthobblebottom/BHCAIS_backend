@@ -5,6 +5,7 @@ import polars as pl
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from sqlalchemy.exc import IntegrityError
 from src.db.db_wrapper import (
+    df_params_sorting_of_names_and_id_in_list_fields,
     engine,
     find_if_locality_name_exists_in_db,
     get_all_people_from_person_table,
@@ -12,8 +13,7 @@ from src.db.db_wrapper import (
     insert_into_locality,
     insert_into_person_if_not_exist_in_name_held,
     localities_params_dict_sorting_of_names_and_ids,
-    param_dict_sorting_of_names_and_id_for_interview_participants,
-    param_dict_sorting_of_names_and_ids,
+    df_params_sorting_of_names_and_ids,
     text,
 )
 
@@ -129,7 +129,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 "fieldnotes",
                 "keywords",
                 "repository_location_id",
-                "catalogued_by_ids",
+                "catalogued_by_names",
                 "dates_catalogued",
                 "access_level",
                 "remarks",
@@ -139,12 +139,12 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
             ]  # renaming
             df_params = df_params.with_columns(
                 pl.col("dates_catalogued").str.strip_chars().str.split("||"),
-                pl.col("catalogued_by_ids").str.strip_chars().str.split("||"),
+                pl.col("catalogued_by_names").str.strip_chars().str.split("||"),
             )
 
             unique_collectors_names = df_params["collector_name"].unique().to_list()
             unique_sets_of_cataloguer_names = (
-                df_params["catalogued_by_ids"].unique().to_list()
+                df_params["catalogued_by_names"].unique().to_list()
             )
             unique_country_names = df_params["country"].unique().to_list()
             unique_localities = (
@@ -170,13 +170,17 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 )
                 for row in params_dict
             ]
-            for dic, album in zip(params_dict, album_json):
-                dic["album"] = album
-                del dic["album_number"]
-                del dic["album_information_old"]
-                del dic["album_information_new"]
-                del dic["country"]
-                del dic["gps_coordinates"]
+            # for dic, album in zip(params_dict, album_json):
+            #     dic["album"] = album
+            #     del dic["album_number"]
+            #     del dic["album_information_old"]
+            #     del dic["album_information_new"]
+            #     del dic["country"]
+            #     del dic["gps_coordinates"]
+            df_params = pl.concat(
+                [df_params, pl.DataFrame(album_json, schema={"album": pl.String})],
+                how="horizontal",
+            )
             try:
                 with engine.begin() as connection:
                     # Collectors and catalogurs ---------------------------------------------
@@ -195,31 +199,30 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                     people = get_all_people_from_person_table(connection)
 
                     # change the collector_name into collector-id in params_dict and catagoluers_name into cataloger_ids in params_dict
-                    param_dict_sorting_of_names_and_ids(
-                        params_dict,
-                        people,
-                        "collector_name",
-                        "collector_id",
-                        connection,
+                    df_params = df_params_sorting_of_names_and_ids(
+                        df_params, people, "collector", "name_held", "person"
                     )
 
-                    for x in params_dict:
-                        hasCataloguersByIDsChanged = False
-                        new_catalogued_by_ids = []
-                        for person in people:
-                            for cataloguer_name in x["catalogued_by_ids"]:
-                                if cataloguer_name not in person[1]:
-                                    # 1 index points to name_held in person
-                                    new_catalogued_by_ids.append(
-                                        person[0]
-                                    )  # persion_id in people
-                                    hasCataloguersByIDsChanged = True
-                        x["catalogued_by_ids"] = (
-                            new_catalogued_by_ids
-                            if hasCataloguersByIDsChanged
-                            else None
-                        )
-
+                    df_params = df_params_sorting_of_names_and_id_in_list_fields(
+                        df_params, people, "catalogued_by", "name_held", "person_id"
+                    )
+                    print(df_params)
+                    # for x in params_dict:
+                    #     hasCataloguersByIDsChanged = False
+                    #     new_catalogued_by_ids = []
+                    #     for person in people:
+                    #         for cataloguer_name in x["catalogued_by_ids"]:
+                    #             if cataloguer_name not in person[1]:
+                    #                 # 1 index points to name_held in person
+                    #                 new_catalogued_by_ids.append(
+                    #                     person[0]
+                    #                 )  # persion_id in people
+                    #                 hasCataloguersByIDsChanged = True
+                    #     x["catalogued_by_ids"] = (
+                    #         new_catalogued_by_ids
+                    #         if hasCataloguersByIDsChanged
+                    #         else None
+                    #     )
                     # Locality --------------------------------------------------------
                     # insert any new country locality into locality table
                     for locality in unique_country_names:
@@ -296,17 +299,16 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                     )
 
                     # change locality name to locality id for "locality" and "repository_locality" in params_dict
-                    localities_params_dict_sorting_of_names_and_ids(
-                        params_dict, people, unique_localities, "locality", connection
+                    df_params = localities_params_dict_sorting_of_names_and_ids(
+                        df_params, unique_localities, "locality"
                     )
-                    localities_params_dict_sorting_of_names_and_ids(
-                        params_dict,
-                        people,
+                    df_params = localities_params_dict_sorting_of_names_and_ids(
+                        df_params,
                         unique_localities,
                         "repository_location_id",
-                        connection,
                     )
-
+                    params_dict = df_params.to_dicts()
+                    print(params_dict[0])
                     # Main insertion into print table
                     connection.execute(
                         text(
@@ -322,7 +324,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 fieldnotes ,
                                 keywords,
 
-                               repository_location_id, 
+                               repository_location_id,
                                 access_level,
                                 remarks ,
                                 batch_number ,
@@ -351,7 +353,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                             :batch_number ,
                             :uploaded_by_user_of_id ,
                             :upload_date,
-                            
+
                             :catalogued_by_ids,
                             :dates_catalogued ,
                             :album,
@@ -415,23 +417,23 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 "name_of_interviewee2",
                 "recording_date",
                 "track_number",
-                "total_track",
-                "total_run_time",
-                "interview_name",
+                "total_tracks",
+                "track_duration",
+                "file_name",
                 "file_format",
                 "access_condition",
                 "access_remarks",
                 "transcription_status",
-                "track_editing_remark",
+                "track_editing_remarks",
                 "was_vetted_for_access",
                 "accession_status",
                 "primary_language",
                 "keywords",
-                "interview_location_id",
+                "interview_location_name",
                 "interviewer_names",
                 "associated_materials",
                 "catalogued_by",
-                "catalogue_date",
+                "catalogued_date",
                 "comments",
                 "uploaded_by_user_of_id",
                 "upload_date",
@@ -440,28 +442,22 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
             df_params = df_params.with_columns(
                 interviewer_names=pl.col("interviewer_names")
                 .str.strip_chars()
-                .str.split("||"),
+                .str.split(","),
                 interviewee_names=pl.concat_list(
                     "name_of_interviewee1", "name_of_interviewee2"
                 ),
             )
-            params_dict = df_params.to_dicts()
 
-            unique_interviewer_names = (
-                df_params["interviewer_names"].explode().unique().to_list()
-            )
-            unique_interviewee_names = (
-                df_params["interviewee_names"].explode().unique().to_list()
-            )
             unique_interview_participant_names = (
-                unique_interviewee_names + unique_interviewer_names
+                df_params["interviewer_names"].explode().unique().to_list()
+                + df_params["interviewee_names"].explode().unique().to_list()
             )
             unique_interview_participant_names = [
                 x for x in unique_interview_participant_names if x is not None
             ]
             unique_localities = (
-                df_params.filter(pl.col("interview_location_id").is_not_null())[
-                    "interview_location_id"
+                df_params.filter(pl.col("interview_location_name").is_not_null())[
+                    "interview_location_name"
                 ]
                 .unique()
                 .to_list()
@@ -475,33 +471,14 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                             name, user_id, connection
                         )
                     people = get_all_people_from_person_table(connection)
-
-                    param_dict_sorting_of_names_and_id_for_interview_participants(
-                        params_dict,
-                        people,
-                        "interviewee_names",
-                        "interviewee_ids",
-                        connection,
+                    df_params = df_params.with_columns()
+                    df_params = df_params_sorting_of_names_and_id_in_list_fields(
+                        df_params, people, "interviewee", "name_held", "person_id"
                     )
-                    param_dict_sorting_of_names_and_id_for_interview_participants(
-                        params_dict,
-                        people,
-                        "interviewer_names",
-                        "interviewer_ids",
-                        connection,
+                    df_params = df_params_sorting_of_names_and_id_in_list_fields(
+                        df_params, people, "interviewer", "name_held", "person_id"
                     )
-
-                    # splitting interviewee ids into 2:
-                    for x in params_dict:
-                        if x["interviewee_ids"] == None:
-                            continue
-                        x["interviewee_id1"] = x["interviewee_ids"][0]
-                        x["interviewee_id2"] = (
-                            x["interviewee_ids"][1]
-                            if len(x["interviewee_ids"]) == 2
-                            else None
-                        )
-
+                    print(df_params["interviewee_ids", "interviewer_ids"])
                     # locality
                     for locality in unique_localities:
                         results = find_if_locality_name_exists_in_db(
@@ -524,55 +501,98 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                     )
 
                     # change locality name to locality id for "locality" and "repository_locality" in params_dict
-                    localities_params_dict_sorting_of_names_and_ids(
-                        params_dict,
-                        people,
+                    df_params = df_params_sorting_of_names_and_ids(
+                        df_params,
                         unique_localities,
-                        "interview_location_id",
-                        connection,
+                        "interview_location",
+                        "locality_name",
+                        "locality",
                     )
-
+                    print(df_params)
+                    params_dict = df_params.to_dicts()
                     # Main insertion into Oral table table
                     connection.execute(
                         text(
-                            """INSERT INTO oral_history (
+                            """INSERT INTO oral_history_track (
                    
-                            interviewee_id1 ,
-                            interviewee_id2 ,
-                            recording_date ,
-                            total_track ,
-                            total_run_time ,
-                            access_condition ,
-                            access_remarks ,
-                            primary_language ,
-                            interview_location_id ,
-                            interviewer_ids,
-                            comments ,
-                            uploaded_by_user_of_id ,
-                            upload_date,
-                            interview_name
+                    
+                                    track_number ,
+                                    file_name ,
+                                    file_format ,
+                                    track_duration ,
+                                    date_of_recording ,
+                                    track_transcription_complete ,
+                                    track_editing_remarks ,
+                                    track_comments ,
+                                    access_condition ,
+                                    catalogued_by ,
+                                    catalogued_date ,
+                                    upload_date ,
+                                    uploaded_by_user_of_id
                             )
                         VALUES
                             (
-                            :interviewee_id1 ,
-                            :interviewee_id2 ,
-                            :recording_date ,
-                            :total_track ,
-                            :total_run_time ,
-                            :access_condition ,
-                            :access_remarks ,
-                            :primary_language ,
-                            :interview_location_id ,
-                            :interviewer_ids,
-                            :comments ,
-                            :uploaded_by_user_of_id ,
-                            :upload_date     ,
-                            :interview_name            
+                
+                                    :track_number ,
+                                    :file_name ,
+                                    :file_format ,
+                                    :track_duration ,
+                                    :recording_date ,
+                                    :transcription_status,
+                                    :track_editing_remarks ,
+                                    :comments ,
+                                    :access_condition ,
+                                    :catalogued_by ,
+                                    :catalogued_date ,
+                                    :upload_date ,
+                                    :uploaded_by_user_of_id
+
+                   
                             ) """
                         ),
                         params_dict,
                     )
-
+                    # # Main insertion into Oral table track table
+                    # connection.execute(
+                    #     text(
+                    #         """INSERT INTO oral_history_track (
+                    #                            interviewID ,
+                    #                             track_number ,
+                    #                             file_name ,
+                    #                             file_path ,
+                    #                             file_format ,
+                    #                             transcript_path ,
+                    #                             track_duration ,
+                    #                             date_of_recording ,
+                    #                             track_transcription_complete ,
+                    #                             track_editing_remarks ,
+                    #                             track_comments ,
+                    #                             access_level,
+                    #                             catalogued_by ,
+                    #                             catalogued_date ,
+                    #                             upload_date ,
+                    #                             uploaded_by_user_of_id
+                    #                     ) VALUES (
+                    #                             :interviewID ,
+                    #                             :track_number ,
+                    #                             :file_name ,
+                    #                             :file_path ,
+                    #                             :file_format ,
+                    #                             :transcript_path ,
+                    #                             :track_duration ,
+                    #                             :date_of_recording ,
+                    #                             :track_transcription_complete ,
+                    #                             :track_editing_remarks ,
+                    #                             :track_comments ,
+                    #                             :access_level,
+                    #                             :catalogued_by ,
+                    #                             :catalogued_date ,
+                    #                             :upload_date ,
+                    #                             :uploaded_by_user_of_id
+                    #                     ) """
+                    #     ),
+                    #     params_dict,
+                    # )
             except IntegrityError as e:
                 pass
 
