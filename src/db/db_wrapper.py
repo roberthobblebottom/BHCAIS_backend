@@ -41,9 +41,9 @@ def insert_into_person_if_not_exist_in_name_held(names, user_id, connection):
             connection.execute(
                 text(
                     """
-    INSERT INTO person (name_held,uploaded_by_user_of_id,upload_date)
-    VALUES (ARRAY [:name_held],:uploaded_by_user_of_id,:upload_date)
-        """
+            INSERT INTO person (name_held,uploaded_by_user_of_id,upload_date)
+            VALUES (ARRAY [:name_held],:uploaded_by_user_of_id,:upload_date)
+                """
                 ),
                 [
                     {
@@ -119,20 +119,11 @@ def df_params_sorting_of_names_and_id_in_list_fields(
     def fun_(x):
         arr = []
         for x1 in x:
-            print(
-                people.filter(pl.col(column_to_be_filtered) == x1),
-                column_to_be_filtered,
-                column_to_be_extracted,
-            )
             t = people.filter(pl.col(column_to_be_filtered) == x1)[
                 column_to_be_extracted
             ].to_list()
             if len(t) != 0:
                 arr.extend([int(t1) for t1 in t])
-        print(
-            "arr",
-            arr,
-        )
         return arr
 
     return df_params.with_columns(

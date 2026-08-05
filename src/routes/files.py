@@ -6,6 +6,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from sqlalchemy.exc import IntegrityError
 from src.db.db_wrapper import (
     df_params_sorting_of_names_and_id_in_list_fields,
+    df_params_sorting_of_names_and_ids,
     engine,
     find_if_locality_name_exists_in_db,
     get_all_people_from_person_table,
@@ -13,7 +14,6 @@ from src.db.db_wrapper import (
     insert_into_locality,
     insert_into_person_if_not_exist_in_name_held,
     localities_params_dict_sorting_of_names_and_ids,
-    df_params_sorting_of_names_and_ids,
     text,
 )
 
@@ -478,7 +478,6 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                     df_params = df_params_sorting_of_names_and_id_in_list_fields(
                         df_params, people, "interviewer", "name_held", "person_id"
                     )
-                    print(df_params["interviewee_ids", "interviewer_ids"])
                     # locality
                     for locality in unique_localities:
                         results = find_if_locality_name_exists_in_db(
@@ -508,14 +507,95 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                         "locality_name",
                         "locality",
                     )
-                    print(df_params)
-                    params_dict = df_params.to_dicts()
+                    df_grouped = df_params.with_columns(
+                        pl.col("track_duration")
+                        .str.split(" ")
+                        .list[1]
+                        .alias("track_duration")
+                    ).group_by(["interviewer_ids", "interviewee_ids", "total_tracks"])
+                    df_grouped = (
+                        df_grouped.agg(
+                            "file_name",
+                            "recording_date",
+                            "track_duration",
+                            "access_condition",
+                            "access_remarks",
+                            "primary_language",
+                            "interview_location_id",
+                            "comments",
+                        )
+                        .with_columns(
+                            uploaded_by_user_of_id=pl.lit(int(user_id)),
+                            upload_date=pl.lit("NOW()"),
+                        )
+                        .with_columns(
+                            pl.col(pl.List(pl.String())).list.agg(
+                                pl.element().drop_nulls().drop_nans().unique()
+                            ),
+                            pl.col(pl.List(pl.Int64())).list.agg(
+                                pl.element().drop_nans().drop_nulls().unique()
+                            ),
+                            pl.col(pl.List(pl.Int16())).list.agg(
+                                pl.element().drop_nans().drop_nulls().unique()
+                            ),
+                        )
+                        .with_columns(
+                            pl.col(
+                                "track_duration",
+                                "recording_date",
+                                "file_name",
+                                "access_condition",
+                                "access_condition",
+                                "access_remarks",
+                                "primary_language",
+                                "comments",
+                            ).list.join(","),
+                            ### this block for interview_location_id must be done twice or else out of bounce error will occur:
+                            pl.when(
+                                (pl.col("interview_location_id").list.len() == 0)
+                                | (pl.col("interview_location_id").is_null())
+                            )
+                            .then(pl.lit(None))
+                            .otherwise("interview_location_id")
+                            .alias("interview_location_id"),
+                        )
+                    )
+                    # print(df_grouped.dtypes)
+                    # print(
+                    #     df_grouped.filter(
+                    #         pl.col("interview_location_id").is_not_null()
+                    #     ).select("interview_location_id")
+                    # )
+                    df_grouped = df_grouped.with_columns(
+                        pl.when(pl.col("primary_language") == "")
+                        .then(pl.lit("NULL"))
+                        .otherwise("primary_language")
+                        .alias("primary_language"),
+                        pl.when(pl.col("interviewer_ids").list.len() == 0)
+                        .then(pl.lit(None))
+                        .otherwise("interviewer_ids")
+                        .alias("interviewer_ids"),
+                        pl.when(pl.col("interviewee_ids").list.len() == 0)
+                        .then(pl.lit(None))
+                        .otherwise("interviewee_ids")
+                        .alias("interviewee_ids"),
+                        ### this block for interview_location_id must be done twice or else out of bounce error will occur:
+                        pl.when(
+                            (pl.col("interview_location_id").list.len() == 0)
+                            | (pl.col("interview_location_id").is_null())
+                        )
+                        .then(pl.lit(None))
+                        .otherwise(
+                            pl.col("interview_location_id").list[0]
+                        )  # GET THE FIRST INTERVIEW LOCATION ID
+                        .alias("interview_location_id"),
+                    )
+
+                    # retur
                     # Main insertion into Oral table table
                     connection.execute(
                         text(
                             """INSERT INTO oral_history_track (
-                   
-                    
                                     track_number ,
                                     file_name ,
                                     file_format ,
@@ -529,10 +609,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                     catalogued_date ,
                                     upload_date ,
                                     uploaded_by_user_of_id
-                            )
-                        VALUES
-                            (
-                
+                            ) VALUES (
                                     :track_number ,
                                     :file_name ,
                                     :file_format ,
@@ -546,12 +623,49 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                     :catalogued_date ,
                                     :upload_date ,
                                     :uploaded_by_user_of_id
-
-                   
                             ) """
                         ),
-                        params_dict,
+                        df_params.to_dicts(),
                     )
+
+                    connection.execute(
+                        text(
+                            """
+                        INSERT INTO oral_history
+                       (   
+                            interview_name ,
+                            recording_date ,
+                            total_tracks ,
+                            total_run_time ,
+                            access_condition ,
+                            access_remarks ,
+                            primary_language, 
+                            interview_location_id ,
+                            interviewer_ids ,
+                            interviewee_ids ,
+                            comments ,
+                            uploaded_by_user_of_id,
+                            upload_date 
+                        ) VALUES(
+                            :file_name ,
+                            :recording_date ,
+                            :total_tracks ,
+                            :track_duration ,
+                            :access_condition ,
+                            :access_remarks ,
+                            :primary_language ,
+                            :interview_location_id ,
+                            :interviewer_ids ,
+                            :interviewee_ids ,
+                            :comments ,
+                            :uploaded_by_user_of_id,
+                            :upload_date 
+                        )
+                                                    """
+                        ),
+                        df_grouped.to_dicts(),
+                    )
+
                     # # Main insertion into Oral table track table
                     # connection.execute(
                     #     text(
