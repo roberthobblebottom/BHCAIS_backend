@@ -176,3 +176,52 @@ library_and_archives_header = [
 library_and_archives_header = str(
     [col.strip().lower() for col in library_and_archives_header]
 )
+
+if __name__ == "__main__":
+    print(
+        print_headers.replace("[", "")
+        .replace("]", "")
+        .replace("(", "")
+        .replace(")", "")
+        .replace("/", "")
+        .replace("-", "_")
+        .replace(", ", ",")
+        .replace(" ", "_"),
+        "\n",
+        oral_histories_headers.replace("[", "")
+        .replace("]", "")
+        .replace("(", "")
+        .replace(")", "")
+        .replace("/", "")
+        .replace("-", "_")
+        .replace(", ", ",")
+        .replace(" ", "_"),
+        "\n",
+        slides_headers.replace("[", "")
+        .replace("]", "")
+        .replace("(", "")
+        .replace(")", "")
+        .replace("/", "")
+        .replace("-", "_")
+        .replace(", ", ",")
+        .replace(" ", "_"),
+        "\n",
+        library_and_archives_header.replace("[", "")
+        .replace("]", "")
+        .replace("(", "")
+        .replace(")", "")
+        .replace("/", "")
+        .replace("-", "_")
+        .replace(", ", ",")
+        .replace(" ", "_"),
+        "\n",
+        negative_headers.replace("[", "")
+        .replace("]", "")
+        .replace("(", "")
+        .replace(")", "")
+        .replace("/", "")
+        .replace("-", "_")
+        .replace(", ", ",")
+        .replace(" ", "_"),
+        "\n",
+    )

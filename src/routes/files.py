@@ -560,12 +560,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                             .alias("interview_location_id"),
                         )
                     )
-                    # print(df_grouped.dtypes)
-                    # print(
-                    #     df_grouped.filter(
-                    #         pl.col("interview_location_id").is_not_null()
-                    #     ).select("interview_location_id")
-                    # )
+
                     df_grouped = df_grouped.with_columns(
                         pl.when(pl.col("primary_language") == "")
                         .then(pl.lit("NULL"))
@@ -666,47 +661,6 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                         df_grouped.to_dicts(),
                     )
 
-                    # # Main insertion into Oral table track table
-                    # connection.execute(
-                    #     text(
-                    #         """INSERT INTO oral_history_track (
-                    #                            interviewID ,
-                    #                             track_number ,
-                    #                             file_name ,
-                    #                             file_path ,
-                    #                             file_format ,
-                    #                             transcript_path ,
-                    #                             track_duration ,
-                    #                             date_of_recording ,
-                    #                             track_transcription_complete ,
-                    #                             track_editing_remarks ,
-                    #                             track_comments ,
-                    #                             access_level,
-                    #                             catalogued_by ,
-                    #                             catalogued_date ,
-                    #                             upload_date ,
-                    #                             uploaded_by_user_of_id
-                    #                     ) VALUES (
-                    #                             :interviewID ,
-                    #                             :track_number ,
-                    #                             :file_name ,
-                    #                             :file_path ,
-                    #                             :file_format ,
-                    #                             :transcript_path ,
-                    #                             :track_duration ,
-                    #                             :date_of_recording ,
-                    #                             :track_transcription_complete ,
-                    #                             :track_editing_remarks ,
-                    #                             :track_comments ,
-                    #                             :access_level,
-                    #                             :catalogued_by ,
-                    #                             :catalogued_date ,
-                    #                             :upload_date ,
-                    #                             :uploaded_by_user_of_id
-                    #                     ) """
-                    #     ),
-                    #     params_dict,
-                    # )
             except IntegrityError as e:
                 pass
 
