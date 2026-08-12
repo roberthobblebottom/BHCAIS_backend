@@ -3,6 +3,7 @@ from typing import Annotated
 
 import polars as pl
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from sqlalchemy import literal_column
 from sqlalchemy.exc import IntegrityError
 from src.db.db_wrapper import (
     df_params_sorting_of_names_and_id_in_list_fields,
@@ -19,13 +20,103 @@ from src.db.db_wrapper import (
 
 from ..constants import (
     library_and_archives_header,
+    library_and_archives_sql_string_columns,
     negative_headers,
+    negative_sql_string_columns,
     oral_histories_headers,
+    oral_histories_sql_string_columns,
     print_headers,
+    print_sql_string_columns,
     slides_headers,
+    slides_sql_string_columns,
 )
 
 router = APIRouter()
+
+
+@router.get("/getCatalogue", status_code=200)
+async def getCatalogue(
+    catalogue_name: str,
+    rows_per_page: int,
+    current_page_number: int,
+    filter_str: str,
+    sort_by: str,
+    descending: bool,
+):
+    filter_str = "%" + filter_str + "%" if filter_str != "" else ""
+    print(
+        "catalogue_name",
+        catalogue_name,
+        "rows_per_page",
+        rows_per_page,
+        "current_page_numbert",
+        current_page_number,
+        "filter_str",
+        filter_str,
+        "sort_by",
+        sort_by,
+        "descending",
+        descending,
+    )
+    with engine.begin() as connection:
+        row_counts = connection.execute(
+            text(f"""
+            SELECT COUNT(*) FROM {catalogue_name}_raw;
+        """)
+        ).one()[0]
+        fetchCount = row_counts if rows_per_page == 0 else rows_per_page
+
+        startRow = (current_page_number - 1) * rows_per_page
+
+        get_header_dict = {
+            "print": print_sql_string_columns,
+            "oral_history": oral_histories_sql_string_columns,
+            "negative": negative_sql_string_columns,
+            "slide": slides_sql_string_columns,
+            "library_and_archieve": library_and_archives_sql_string_columns,
+        }
+        where_sql_condition = ""
+        if filter_str != "":
+            for i, x in enumerate(get_header_dict[catalogue_name]):
+                keyword = "WHERE" if i == 0 else "OR"
+                where_sql_condition += (
+                    f" {keyword} {literal_column(x)} ILIKE :filter_str{i}"
+                )
+        order_by_sql_condition = (
+            f"ORDER BY {literal_column(sort_by)}"
+            if sort_by not in ["desc", "null"]
+            else ""
+        )
+        order_by_sql_condition = (
+            order_by_sql_condition + " DESC"
+            if descending and order_by_sql_condition != ""
+            else ""
+        )
+        sql = (
+            f"SELECT * FROM {literal_column(catalogue_name)}_raw "
+            + where_sql_condition
+            + order_by_sql_condition
+            + " LIMIT :fetch_count OFFSET :start_row;"
+        )
+        print("sql", sql)
+        params = {
+            "sort_by": sort_by,
+            "fetch_count": fetchCount,
+            "start_row": startRow,
+        }
+        if filter_str != "":
+            for x in range(len(get_header_dict[catalogue_name])):
+                params[f"filter_str{x}"] = filter_str
+        print("params", params)
+        results = [
+            row._asdict()
+            for row in connection.execute(
+                text(sql),
+                [params],
+            ).all()
+        ]
+        print("results", results)
+        return {"results": results, "row_counts": row_counts}
 
 
 @router.post("/uploadFiles")

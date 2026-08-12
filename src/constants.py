@@ -175,52 +175,179 @@ library_and_archives_header = [
 library_and_archives_header = str(
     [col.strip().lower() for col in library_and_archives_header]
 )
+print_sql_string_columns = (
+    # "print_raw_id",
+    "continuous_sn_no",
+    "uid",
+    "album_no",
+    "object_condition_qc1",
+    "album_information_old",
+    "album_information_new",
+    "photograph_information",
+    "main_category",
+    "collector_name",
+    "day",
+    "month",
+    "year",
+    "country",
+    "locality",
+    "gps_coordinates",
+    "taxonomy",
+    "common_name",
+    "fieldnotes",
+    "keywords",
+    "location_in_lkcnhm",
+    "catalogued_by",
+    "date_catalogued",
+    "access_status",
+    "remarks",
+    "negative_yn",
+    "batch_no",
+    "sign_out_date",
+    "sign_in_date",
+    "date_of_qc",
+    "checked_by",
+    "object_condition_qc2",
+)
+oral_histories_sql_string_columns = (
+    # "oral_history_raw_id",
+    "sn",
+    "name_of_interviewee",
+    "name_of_interviewee_2",
+    "recording_date_ddmmyyyy",
+    "track_number",
+    "total_tracks",
+    "running_time",
+    "file_name",
+    "format_original_file",
+    "access_conditions",
+    "access_remarks",
+    "transcription_status",
+    "editing_remarks",
+    "vetted_for_access",
+    "accession_status",
+    "languages",
+    "keywords",
+    "interview_location",
+    "interviewers",
+    "associated_materials",
+    "catalogued_by",
+    "catalogue_date",
+    "comments",
+)
 
+slides_sql_string_columns = (
+    # "slide_raw_id",
+    "sn_no",
+    "uid",
+    "box_no",
+    "object_condition_qc1",
+    "box_information_old",
+    "box_information_new",
+    "divider_1",
+    "divider_2",
+    "divider_3",
+    "slides_information",
+    "main_category",
+    "collector_name",
+    "day",
+    "month",
+    "year",
+    "country",
+    "locality",
+    "gps_coordinates",
+    "taxonomy",
+    "common_name",
+    "fieldnotes",
+    "keywords",
+    "location_in_lkcnhm",
+    "catalogued_by",
+    "date_catalogued",
+    "access_status",
+    "remarks",
+    "batch_no",
+    "sign_out_date",
+    "sign_in_date",
+    "date_of_qc",
+    "checked_by",
+    "object_condition_qc2",
+    "data_tier_2_or_3",
+)
+
+library_and_archives_sql_string_columns = (
+    # "oral_history_raw_id",
+    "sn",
+    "category",
+    "subcategory",
+    "catalog_number",
+    "object_status",
+    "location_in_museum",
+    "material_type",
+    "subject",
+    "shelving_location",
+    "condition",
+    "number_of_copies",
+    "full_title",
+    "journal_conference_report_workshop_name",
+    "edition_number",
+    "volume_number",
+    "issue_number",
+    "pages",
+    "author",
+    "from_year",
+    "from_month",
+    "from_date",
+    "to_year",
+    "to_month",
+    "to_date",
+    "isbnissn_number",
+    "language",
+    "country",
+    "publisher",
+    "organisation",
+    "collection_name",
+    "physical_description",
+    "abstract",
+    "keywords",
+    "remarks",
+    "recorded_by",
+    "recorded_year",
+    "scan_file_media",
+    "transcription_file_media",
+)
+
+negative_sql_string_columns = (
+    # "negative_raw_id",
+    "sn_no",
+    "uid",
+    "ziplock_bag_no",
+    "object_condition_qc1",
+    "ziplock_bag_information",
+    "negative_information",
+    "main_category",
+    "collector_name",
+    "day",
+    "month",
+    "year",
+    "country",
+    "locality",
+    "gps_coordinates",
+    "taxonomy",
+    "common_name",
+    "fieldnotes",
+    "keywords",
+    "location_stored",
+    "catalogued_by",
+    "date_catalogued",
+    "access_status",
+    "remarks",
+    "prints_yn",
+    "batch_no",
+    "sign_out_date",
+    "sign_in_date",
+    "date_of_qc",
+    "checked_by",
+    "object_condition_qc2",
+)
 if __name__ == "__main__":
-    print(
-        print_headers.replace("[", "")
-        .replace("]", "")
-        .replace("(", "")
-        .replace(")", "")
-        .replace("/", "")
-        .replace("-", "_")
-        .replace(", ", ",")
-        .replace(" ", "_"),
-        "\n",
-        oral_histories_headers.replace("[", "")
-        .replace("]", "")
-        .replace("(", "")
-        .replace(")", "")
-        .replace("/", "")
-        .replace("-", "_")
-        .replace(", ", ",")
-        .replace(" ", "_"),
-        "\n",
-        slides_headers.replace("[", "")
-        .replace("]", "")
-        .replace("(", "")
-        .replace(")", "")
-        .replace("/", "")
-        .replace("-", "_")
-        .replace(", ", ",")
-        .replace(" ", "_"),
-        "\n",
-        library_and_archives_header.replace("[", "")
-        .replace("]", "")
-        .replace("(", "")
-        .replace(")", "")
-        .replace("/", "")
-        .replace("-", "_")
-        .replace(", ", ",")
-        .replace(" ", "_"),
-        "\n",
-        negative_headers.replace("[", "")
-        .replace("]", "")
-        .replace("(", "")
-        .replace(")", "")
-        .replace("/", "")
-        .replace("-", "_")
-        .replace(", ", ",")
-        .replace(" ", "_"),
-        "\n",
-    )
+    print()
