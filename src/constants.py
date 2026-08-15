@@ -349,5 +349,12 @@ negative_sql_string_columns = (
     "checked_by",
     "object_condition_qc2",
 )
+get_header_dict = {
+    "print": print_sql_string_columns,
+    "oral_history": oral_histories_sql_string_columns,
+    "negative": negative_sql_string_columns,
+    "slide": slides_sql_string_columns,
+    "library_and_archieve": library_and_archives_sql_string_columns,
+}
 if __name__ == "__main__":
     print()

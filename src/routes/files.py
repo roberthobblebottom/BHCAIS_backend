@@ -1,9 +1,9 @@
-import json
+import json  # noqa: I001
 from typing import Annotated
 
 import polars as pl
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from sqlalchemy import literal_column
+from sqlalchemy import literal_column, bindparam
 from sqlalchemy.exc import IntegrityError
 from src.db.db_wrapper import (
     df_params_sorting_of_names_and_id_in_list_fields,
@@ -20,18 +20,26 @@ from src.db.db_wrapper import (
 
 from ..constants import (
     library_and_archives_header,
-    library_and_archives_sql_string_columns,
     negative_headers,
-    negative_sql_string_columns,
     oral_histories_headers,
-    oral_histories_sql_string_columns,
     print_headers,
-    print_sql_string_columns,
     slides_headers,
-    slides_sql_string_columns,
+    get_header_dict,
 )
+from pydantic import BaseModel
 
 router = APIRouter()
+
+
+class DeleteSelectedRowsModel(BaseModel):
+    ids_to_be_deleted: list[int]
+    catalogue_name: str
+
+
+class DownloadFilesModel(BaseModel):
+    date_range: list[str]
+    search_term: str
+    selected_catalogues: list[str]
 
 
 @router.get("/getCatalogue", status_code=200)
@@ -68,13 +76,6 @@ async def getCatalogue(
 
         startRow = (current_page_number - 1) * rows_per_page
 
-        get_header_dict = {
-            "print": print_sql_string_columns,
-            "oral_history": oral_histories_sql_string_columns,
-            "negative": negative_sql_string_columns,
-            "slide": slides_sql_string_columns,
-            "library_and_archieve": library_and_archives_sql_string_columns,
-        }
         where_sql_condition = ""
         if filter_str != "":
             for i, x in enumerate(get_header_dict[catalogue_name]):
@@ -1286,3 +1287,68 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
         results = []
         results.append({"filename": file.filename})
     return {"uploaded_files": results}
+
+
+@router.post("/deleteSelectedRows")
+async def delete_selected_rows(model_instance: DeleteSelectedRowsModel):
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                f"""
+        DELETE FROM {literal_column(model_instance.catalogue_name)}_raw 
+        WHERE {literal_column(model_instance.catalogue_name)}_raw_id IN :ids_to_be_deleted
+        """,
+            )
+            .bindparams(
+                bindparam(
+                    key="ids_to_be_deleted",
+                    value=model_instance.ids_to_be_deleted,
+                    expanding=True,
+                )
+            )
+            .compile(compile_kwargs={"literal_binds": True}),
+        )
+    return {"ok": True, "message": "deleted selected rows"}
+
+
+@router.post("/downloadFiles")
+async def download_files(
+    conditions: DownloadFilesModel,
+):
+    print("download files" + str(conditions))
+    results = []
+    for catalogue_name in conditions.selected_catalogues:
+        sql = f"""
+                SELECT * FROM {literal_column(catalogue_name)}_raw
+                    """
+        where_sql_condition = ""
+        where_sql_date_range_condition = ""
+        search_term = conditions.search_term
+        date_range = conditions.date_range
+        if search_term != "":
+            for i, x in enumerate(get_header_dict[catalogue_name]):
+                keyword = "WHERE" if i == 0 else "OR"
+                where_sql_condition += (
+                    f" {keyword} {literal_column(x)} ILIKE :search_term{i}"
+                )
+        if len(date_range) == 0:
+            pass
+        print(sql + where_sql_condition)
+
+        params = {}
+        for x in range(len(get_header_dict[catalogue_name])):
+            params[f"search_term{x}"] = "%" + search_term + "%"
+        with engine.begin() as connection:
+            result = connection.execute(
+                text(sql + where_sql_condition + where_sql_date_range_condition),
+                [params],
+            ).all()
+
+            results.append(
+                {
+                    "catalogue_name": catalogue_name,
+                    "data": [x._asdict() for x in result],
+                }
+            )
+    print(results)
+    return {"message": "success", "results": results}
