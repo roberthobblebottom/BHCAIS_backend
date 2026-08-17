@@ -354,7 +354,7 @@ get_header_dict = {
     "oral_history": oral_histories_sql_string_columns,
     "negative": negative_sql_string_columns,
     "slide": slides_sql_string_columns,
-    "library_and_archieve": library_and_archives_sql_string_columns,
+    "library_and_archive": library_and_archives_sql_string_columns,
 }
 if __name__ == "__main__":
     print()
