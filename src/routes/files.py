@@ -19,11 +19,11 @@ from src.db.db_wrapper import (
 )
 
 from ..constants import (
-    library_and_archives_header,
-    negative_headers,
-    oral_histories_headers,
-    print_headers,
-    slides_headers,
+    libraryAndArchiveHeader,
+    negativeHeaders,
+    oralHistoryHeaders,
+    printHeaders,
+    slideHeaders,
     get_header_dict,
 )
 from pydantic import BaseModel
@@ -37,7 +37,7 @@ class DeleteSelectedRowsModel(BaseModel):
 
 
 class DownloadFilesModel(BaseModel):
-    date_range: list[str]
+    # date_range: list[str]
     search_term: str
     selected_catalogues: list[str]
 
@@ -150,18 +150,18 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
         cols = str([col.lower().strip() for col in df.columns if col != ""])
         print("cols", cols)
         if (
-            cols != print_headers
-            and cols != oral_histories_headers
-            and cols != slides_headers
-            and cols != negative_headers
-            and cols != library_and_archives_header
+            cols != printHeaders
+            and cols != oralHistoryHeaders
+            and cols != slideHeaders
+            and cols != negativeHeaders
+            and cols != libraryAndArchiveHeader
         ):
             raise HTTPException(
                 status_code=422,
                 detail="The file " + file.filename + "has incorrect or missing headers",
             )
         ### Individual Catalogue processing
-        if cols == print_headers:
+        if cols == printHeaders:
             # Raw Insertion
             df_raw = df.clone()
             df_raw.columns = [
@@ -273,7 +273,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
             if is_futher_processing_disabled:
                 return
 
-        elif cols == negative_headers:
+        elif cols == negativeHeaders:
             # Raw Insertion
             df_raw = df.clone()
             df_raw.columns = [
@@ -382,8 +382,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 if is_futher_processing_disabled:
                     return
                 # future futher processing logic here:
-                pass
-        elif cols == oral_histories_headers:
+        elif cols == oralHistoryHeaders:
             df_raw = df.clone()
             df_raw.columns = [
                 "sn",
@@ -470,7 +469,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
             if is_futher_processing_disabled:
                 return
 
-        elif cols == library_and_archives_header:  # noqa: SIM114
+        elif cols == libraryAndArchiveHeader:  # noqa: SIM114
             df_raw = df.clone()
             df_raw.columns = [
                 "sn",
@@ -602,7 +601,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 )
             if is_futher_processing_disabled:
                 return
-        elif cols == slides_headers:
+        elif cols == slideHeaders:
             df_raw = df.clone()
             df_raw.columns = [
                 "sn_no",
@@ -758,7 +757,8 @@ async def delete_selected_rows(model_instance: DeleteSelectedRowsModel):
 async def download_files(
     conditions: DownloadFilesModel,
 ):
-    print("download files" + str(conditions))
+    if conditions.selected_catalogues == []:
+        raise HTTPException(422, "Missing selected catalogue names.")
     results = []
     for catalogue_name in conditions.selected_catalogues:
         sql = f"""
@@ -767,10 +767,10 @@ async def download_files(
         where_sql_condition = ""
         where_sql_date_range_condition = ""
         search_term = conditions.search_term
-        date_range = conditions.date_range
-        start_date = ""
-        end_date = ""
-        years = []
+        # date_range = conditions.date_range
+        # start_date = ""
+        # end_date = ""
+        # years = []
         params = {}
         if search_term != "":
             for i, x in enumerate(get_header_dict[catalogue_name]):
@@ -781,28 +781,27 @@ async def download_files(
             for x in range(len(get_header_dict[catalogue_name])):
                 params[f"search_term{x}"] = "%" + search_term + "%"
 
-        if len(date_range) != 0:
-            print("date_range", date_range)
+        # if len(date_range) != 0:
+        #     print("date_range", date_range)
 
-            if catalogue_name == "library_and_archive":
-                where_sql_date_range_condition = "recorded_year IN ARRAY(:years)"
+        #     if catalogue_name == "library_and_archive":
+        #         where_sql_date_range_condition = "recorded_year IN ARRAY(:years)"
 
-            else:
-                start_date = date_range[0]
-                end_date = date_range[1]
-                print("start_date", start_date)
-                print("end_date", end_date)
-                where_sql_date_range_condition = (
-                    "catalogued_date BETWEEN :start_date AND :end_date"
-                )
+        #     else:
+        #         start_date = date_range[0]
+        #         end_date = date_range[1]
+        #         print("start_date", start_date)
+        #         print("end_date", end_date)
+        #         where_sql_date_range_condition = (
+        #             "catalogued_date BETWEEN :start_date AND :end_date"
+        #         )
 
-            where_sql_date_range_condition = (
-                "WHERE " + where_sql_date_range_condition
-                if search_term == ""
-                else "AND" + where_sql_date_range_condition
-            )
-            print("where_sql_date_range_condition", where_sql_date_range_condition)
-            where_sql_date_range_condition = ""  # temp disable
+        #     where_sql_date_range_condition = (
+        #         "WHERE " + where_sql_date_range_condition
+        #         if search_term == ""
+        #         else "AND" + where_sql_date_range_condition
+        #     )
+        #     print("where_sql_date_range_condition", where_sql_date_range_condition)
 
         with engine.begin() as connection:
             result = connection.execute(

@@ -1,8 +1,8 @@
 import os
 
+import polars as pl
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-import polars as pl
 
 load_dotenv()
 

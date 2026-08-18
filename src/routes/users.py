@@ -4,20 +4,21 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-
-# from src.schemas.token import Status
-# from .schemas.users import UserInSchema, UserOutSchema
+from pydantic import BaseModel
 from src.auth.jwthandler import (
-    # get_current_user,
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
 )
-
-# from tortoise.contrib.fastapi import HTTPNotFoundError
-# import src.crud.users as crud
-from src.auth.users import validate_user
+from src.auth.users import change_password, validate_user
 
 router = APIRouter()
+
+
+class ChangePasswordForm(BaseModel):
+    username: str
+    old_password: str
+    new_password: str
+    confirm_new_password: str
 
 
 @router.post("/Login")
@@ -55,6 +56,32 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):
     )
 
     return response
+
+
+@router.post("/changePassword")
+async def change_password_route(form: ChangePasswordForm):
+    print("change password route")
+    if (
+        form.new_password != form.confirm_new_password
+        or form.new_password == ""
+        or form.confirm_new_password == ""
+        or form.old_password == ""
+        or form.username == ""
+    ):
+        raise HTTPException(422, "password form is mulformed in some way")
+    try:
+        await validate_user(
+            OAuth2PasswordRequestForm(
+                username=form.username, password=form.old_password
+            )
+        )
+
+        await change_password(form.username, form.new_password)
+    except HTTPException as exc:
+        if exc.status_code == 401:
+            raise HTTPException(401, exec)
+        raise HTTPException(422, "password form is mulformed in some way")
+    return {"ok": True, "message": "sucessfully changed the password"}
 
 
 # @router.get(

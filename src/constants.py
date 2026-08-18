@@ -1,4 +1,4 @@
-print_headers = [
+printHeaders = [
     "Continuous S/N no.",
     "UID",
     "Album no.",
@@ -31,8 +31,8 @@ print_headers = [
     "Checked by",
     "Object Condition (QC2)",
 ]
-print_headers = str([col.strip().lower() for col in print_headers])
-oral_histories_headers = [
+printHeaders = str([col.strip().lower() for col in printHeaders])
+oralHistoryHeaders = [
     "S/N",
     "Name of Interviewee",
     "Name of Interviewee (2)",
@@ -58,8 +58,8 @@ oral_histories_headers = [
     "Comments",
 ]
 
-oral_histories_headers = str([col.strip().lower() for col in oral_histories_headers])
-negative_headers = [
+oralHistoryHeaders = str([col.strip().lower() for col in oralHistoryHeaders])
+negativeHeaders = [
     "S/N no.",
     "UID",
     "Ziplock bag no.",
@@ -92,8 +92,8 @@ negative_headers = [
     "Object Condition (QC2)",
 ]
 
-negative_headers = str([col.strip().lower() for col in negative_headers])
-slides_headers = [
+negativeHeaders = str([col.strip().lower() for col in negativeHeaders])
+slideHeaders = [
     "S/N no.",
     "UID",
     "Box no.",
@@ -130,8 +130,8 @@ slides_headers = [
     "Data Tier (2 or 3)",
 ]
 
-slides_headers = str([col.strip().lower() for col in slides_headers])
-library_and_archives_header = [
+slideHeaders = str([col.strip().lower() for col in slideHeaders])
+libraryAndArchiveHeader = [
     "S/N",
     "Category",
     "Subcategory",
@@ -172,9 +172,7 @@ library_and_archives_header = [
     "Transcription file media",
 ]
 
-library_and_archives_header = str(
-    [col.strip().lower() for col in library_and_archives_header]
-)
+libraryAndArchiveHeader = str([col.strip().lower() for col in libraryAndArchiveHeader])
 print_sql_string_columns = (
     # "print_raw_id",
     "continuous_sn_no",
