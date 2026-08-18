@@ -79,7 +79,7 @@ async def change_password_route(form: ChangePasswordForm):
         await change_password(form.username, form.new_password)
     except HTTPException as exc:
         if exc.status_code == 401:
-            raise HTTPException(401, exec)
+            raise HTTPException(422, "Incorrect username or password.") from exc
         raise HTTPException(422, "password form is mulformed in some way")
     return {"ok": True, "message": "sucessfully changed the password"}
 
