@@ -43,6 +43,7 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):
         "message": "You've successfully logged in. Welcome back!",
         "email": user[1],  # user[1] is email
         "user_id": user[0],
+        "user_type": user[3],  # user[3] == user type
     }
     response = JSONResponse(content=content)
     response.set_cookie(

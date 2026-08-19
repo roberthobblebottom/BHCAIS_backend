@@ -20,7 +20,7 @@ async def _get_user(
 ):
     with engine.begin() as connection:
         result = connection.execute(
-            text("""SELECT user_id, email,salted_password 
+            text("""SELECT user_id, email,salted_password, user_type 
         FROM login_user 
         WHERE email = :username;"""),
             [{"username": username}],
