@@ -265,7 +265,39 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                         :date_of_qc ,
                                         :checked_by ,
                                         :object_condition_qc2 
-                            )
+                            ) ON CONFLICT (continuous_sn_no) 
+                            DO UPDATE 
+                            SET 
+                                uid = EXCLUDED.uid ,
+                                album_no = EXCLUDED.album_no ,
+                                object_condition_qc1 = EXCLUDED.object_condition_qc1 ,
+                                album_information_old = EXCLUDED.album_information_old ,
+                                album_information_new = EXCLUDED.album_information_new ,
+                                photograph_information  = EXCLUDED.photograph_information ,
+                                main_category  = EXCLUDED.main_category ,
+                                collector_name = EXCLUDED.collector_name ,
+                                day = EXCLUDED.day ,
+                                month = EXCLUDED.month ,
+                                year = EXCLUDED.year ,
+                                country = EXCLUDED.country ,
+                                locality = EXCLUDED.locality ,
+                                gps_coordinates = EXCLUDED.gps_coordinates ,
+                                taxonomy = EXCLUDED.taxonomy ,
+                                common_name = EXCLUDED.common_name ,
+                                fieldnotes = EXCLUDED.fieldnotes ,
+                                keywords = EXCLUDED.keywords ,
+                                location_in_lkcnhm = EXCLUDED.location_in_lkcnhm ,
+                                catalogued_by = EXCLUDED.catalogued_by ,
+                                catalogued_date = EXCLUDED.catalogued_date ,
+                                access_status = EXCLUDED.access_status ,
+                                remarks = EXCLUDED.remarks ,
+                                negative_yn = EXCLUDED.negative_yn ,
+                                batch_no = EXCLUDED.batch_no ,
+                                sign_out_date = EXCLUDED.sign_out_date ,
+                                sign_in_date = EXCLUDED.sign_in_date ,
+                                date_of_qc = EXCLUDED.date_of_qc ,
+                                checked_by = EXCLUDED.checked_by ,
+                                object_condition_qc2 = EXCLUDED.object_condition_qc2
                             """
                     ),
                     df_raw.to_dicts(),
@@ -375,6 +407,38 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                             :checked_by ,
                             :object_condition_qc2 
                             )
+                        ON CONFLICT (sn_no) 
+                        DO UPDATE 
+                        SET
+                            uid = EXCLUDED.uid ,
+                            ziplock_bag_no = EXCLUDED.ziplock_bag_no ,
+                            object_condition_qc1 = EXCLUDED.object_condition_qc1 ,
+                            ziplock_bag_information = EXCLUDED.ziplock_bag_information ,
+                            negative_information = EXCLUDED.negative_information ,
+                            main_category = EXCLUDED.main_category ,
+                            collector_name = EXCLUDED.collector_name ,
+                            day = EXCLUDED.day ,
+                            month = EXCLUDED.month ,
+                            year = EXCLUDED.year ,
+                            country = EXCLUDED.country ,
+                            locality = EXCLUDED.locality ,
+                            gps_coordinates = EXCLUDED.gps_coordinates ,
+                            taxonomy = EXCLUDED.taxonomy ,
+                            common_name = EXCLUDED.common_name ,
+                            fieldnotes = EXCLUDED.fieldnotes ,
+                            keywords = EXCLUDED.keywords ,
+                            location_stored = EXCLUDED.location_stored ,
+                            catalogued_by = EXCLUDED.catalogued_by ,
+                            catalogued_date = EXCLUDED.catalogued_date ,
+                            access_status = EXCLUDED.access_status ,
+                            remarks = EXCLUDED.remarks ,
+                            prints_yn = EXCLUDED.prints_yn ,
+                            batch_no = EXCLUDED.batch_no ,
+                            sign_out_date = EXCLUDED.sign_out_date ,
+                            sign_in_date = EXCLUDED.sign_in_date ,
+                            date_of_qc = EXCLUDED.date_of_qc ,
+                            checked_by = EXCLUDED.checked_by ,
+                            object_condition_qc2 = EXCLUDED.object_condition_qc2  
                             """
                     ),
                     df_raw.to_dicts(),
@@ -461,7 +525,32 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                     :catalogued_by ,
                                     :catalogue_date ,
                                     :comments 
-                            )
+                        ) ON CONFLICT (sn) 
+                        DO UPDATE 
+                        SET
+                                    sn = EXCLUDED.sn ,
+                                    name_of_interviewee = EXCLUDED.name_of_interviewee ,
+                                    name_of_interviewee_2 = EXCLUDED.name_of_interviewee_2 ,
+                                    recording_date_ddmmyyyy = EXCLUDED.recording_date_ddmmyyyy ,
+                                    track_number = EXCLUDED.track_number ,
+                                    total_tracks = EXCLUDED.total_tracks ,
+                                    running_time = EXCLUDED.running_time ,
+                                    file_name = EXCLUDED.file_name ,
+                                    format_original_file = EXCLUDED.format_original_file ,
+                                    access_conditions = EXCLUDED.access_conditions ,
+                                    access_remarks = EXCLUDED.access_remarks ,
+                                    transcription_status = EXCLUDED.transcription_status ,
+                                    editing_remarks = EXCLUDED.editing_remarks ,
+                                    vetted_for_access = EXCLUDED.vetted_for_access ,
+                                    accession_status = EXCLUDED.accession_status ,
+                                    languages = EXCLUDED.languages ,
+                                    keywords = EXCLUDED.keywords ,
+                                    interview_location = EXCLUDED.interview_location ,
+                                    interviewers = EXCLUDED.interviewers ,
+                                    associated_materials = EXCLUDED.associated_materials ,
+                                    catalogued_by = EXCLUDED.catalogued_by ,
+                                    catalogue_date = EXCLUDED.catalogue_date ,
+                                    comments = EXCLUDED.comments 
                             """
                     ),
                     df_raw.to_dicts(),
@@ -469,7 +558,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
             if is_futher_processing_disabled:
                 return
 
-        elif cols == libraryAndArchiveHeader:  # noqa: SIM114
+        elif cols == libraryAndArchiveHeader:
             df_raw = df.clone()
             df_raw.columns = [
                 "sn",
@@ -594,7 +683,48 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                 :recorded_year ,
                                 :scan_file_media ,
                                 :transcription_file_media  
-                            )
+                            ) ON CONFLICT (sn) 
+                            DO UPDATE
+                            SET
+                                sn = EXCLUDED.sn ,
+                                category = EXCLUDED.category ,
+                                subcategory = EXCLUDED.subcategory ,
+                                catalog_number = EXCLUDED.catalog_number ,
+                                object_status = EXCLUDED.object_status ,
+                                location_in_museum = EXCLUDED.location_in_museum ,
+                                material_type = EXCLUDED.material_type ,
+                                subject = EXCLUDED.subject ,
+                                shelving_location = EXCLUDED.shelving_location ,
+                                condition = EXCLUDED.condition ,
+                                number_of_copies = EXCLUDED.number_of_copies ,
+                                full_title = EXCLUDED.full_title ,
+                                journal_conference_report_workshop_name = EXCLUDED.journal_conference_report_workshop_name ,
+                                edition_number = EXCLUDED.edition_number ,
+                                volume_number = EXCLUDED.volume_number ,
+                                issue_number = EXCLUDED.issue_number ,
+                                pages = EXCLUDED.pages ,
+                                author = EXCLUDED.author ,
+                                from_year = EXCLUDED.from_year ,
+                                from_month = EXCLUDED.from_month ,
+                                from_date = EXCLUDED.from_date ,
+                                to_year = EXCLUDED.to_year ,
+                                to_month = EXCLUDED.to_month ,
+                                to_date = EXCLUDED.to_date ,
+                                isbnissn_number = EXCLUDED.isbnissn_number ,
+                                language = EXCLUDED.language ,
+                                country = EXCLUDED.country ,
+                                publisher = EXCLUDED.publisher ,
+                                organisation = EXCLUDED.organisation ,
+                                collection_name = EXCLUDED.collection_name ,
+                                physical_description = EXCLUDED.physical_description ,
+                                abstract = EXCLUDED.abstract ,
+                                keywords = EXCLUDED.keywords ,
+                                remarks = EXCLUDED.remarks ,
+                                recorded_by = EXCLUDED.recorded_by ,
+                                recorded_year = EXCLUDED.recorded_year ,
+                                scan_file_media = EXCLUDED.scan_file_media ,
+                                transcription_file_media = EXCLUDED.transcription_file_media 
+
                             """
                     ),
                     df_raw.to_dicts(),
@@ -714,7 +844,42 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                                     :checked_by ,
                                     :object_condition_qc2 ,
                                     :data_tier_2_or_3 
-                            )
+                            )ON CONFLICT (sn_no) 
+                            DO UPDATE
+                            SET
+                                    uid = EXCLUDED.uid ,
+                                    box_no = EXCLUDED.box_no ,
+                                    object_condition_qc1 = EXCLUDED.object_condition_qc1 ,
+                                    box_information_old = EXCLUDED.box_information_old ,
+                                    box_information_new = EXCLUDED.box_information_new ,
+                                    divider_1 = EXCLUDED.divider_1 ,
+                                    divider_2 = EXCLUDED.divider_2 ,
+                                    divider_3 = EXCLUDED.divider_3 ,
+                                    slides_information = EXCLUDED.slides_information ,
+                                    main_category = EXCLUDED.main_category ,
+                                    collector_name = EXCLUDED.collector_name ,
+                                    day = EXCLUDED.day ,
+                                    month = EXCLUDED.month ,
+                                    year = EXCLUDED.year ,
+                                    country = EXCLUDED.country ,
+                                    locality = EXCLUDED.locality ,
+                                    gps_coordinates = EXCLUDED.gps_coordinates ,
+                                    taxonomy = EXCLUDED.taxonomy ,
+                                    common_name = EXCLUDED.common_name ,
+                                    fieldnotes = EXCLUDED.fieldnotes ,
+                                    keywords = EXCLUDED.keywords ,
+                                    location_in_lkcnhm = EXCLUDED.location_in_lkcnhm ,
+                                    catalogued_by = EXCLUDED.catalogued_by ,
+                                   catalogued_date = EXCLUDED.catalogued_date ,
+                                    access_status = EXCLUDED.access_status ,
+                                    remarks = EXCLUDED.remarks ,
+                                    batch_no = EXCLUDED.batch_no ,
+                                    sign_out_date = EXCLUDED.sign_out_date ,
+                                    sign_in_date = EXCLUDED.sign_in_date ,
+                                    date_of_qc = EXCLUDED.date_of_qc ,
+                                    checked_by = EXCLUDED.checked_by ,
+                                    object_condition_qc2 = EXCLUDED.object_condition_qc2 ,
+                                    data_tier_2_or_3 = EXCLUDED.data_tier_2_or_3  
                             """
                     ),
                     df_raw.to_dicts(),
