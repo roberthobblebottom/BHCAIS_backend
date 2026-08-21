@@ -10,6 +10,8 @@ from src.auth.jwthandler import (
     create_access_token,
 )
 from src.auth.users import change_password, validate_user
+from src.db.db_wrapper import engine
+from sqlalchemy import text
 
 router = APIRouter()
 
@@ -59,7 +61,7 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):
     return response
 
 
-@router.post("/changePassword")
+@router.post("/ChangePassword")
 async def change_password_route(form: ChangePasswordForm):
     print("change password route")
     if (
@@ -83,6 +85,17 @@ async def change_password_route(form: ChangePasswordForm):
             raise HTTPException(422, "Incorrect username or password.") from exc
         raise HTTPException(422, "password form is mulformed in some way")
     return {"ok": True, "message": "sucessfully changed the password"}
+
+
+@router.get("/GetAllUsers", status_code=200)
+async def get_all_users():
+    with engine.begin() as connection:
+        results = connection.execute(
+            text("SELECT user_id,email,user_type FROM login_user;")
+        ).all()
+        print(results)
+        print([x._asdict() for x in results])
+        return {"results": [x._asdict() for x in results]}
 
 
 # @router.get(

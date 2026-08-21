@@ -27,6 +27,7 @@ from ..constants import (
     get_header_dict,
 )
 from pydantic import BaseModel
+from fastapi.responses import FileResponse
 
 router = APIRouter()
 
@@ -52,20 +53,7 @@ async def getCatalogue(
     descending: bool,
 ):
     filter_str = "%" + filter_str + "%" if filter_str != "" else ""
-    print(
-        "catalogue_name",
-        catalogue_name,
-        "rows_per_page",
-        rows_per_page,
-        "current_page_numbert",
-        current_page_number,
-        "filter_str",
-        filter_str,
-        "sort_by",
-        sort_by,
-        "descending",
-        descending,
-    )
+
     with engine.begin() as connection:
         row_counts = connection.execute(
             text(f"""
@@ -1525,3 +1513,9 @@ def old_transformation_for_oral_history(
             )
     except IntegrityError as e:
         pass
+
+
+@router.get("/DownloadTemplatesForTheCatelogs")
+def download_templates_for_the_catelogs():
+    file_path = "./templates for the catelogs.zip"
+    return FileResponse(file_path, media_type="application/zip")
