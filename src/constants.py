@@ -354,5 +354,9 @@ get_header_dict = {
     "slide": slides_sql_string_columns,
     "library_and_archive": library_and_archives_sql_string_columns,
 }
+passwordRegex = r"^(?=.*[a-z])(?=.*[0-9])\S{7,}$"
+passwordError = (
+    "Passwords must at least have 7 charactors, one lower case and one upper case"
+)
 if __name__ == "__main__":
     print()

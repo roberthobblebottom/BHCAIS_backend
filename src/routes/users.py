@@ -1,26 +1,51 @@
+import re
 from datetime import timedelta
+from enum import Enum
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from pydantic import AfterValidator, BaseModel, EmailStr
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from src.auth.jwthandler import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
 )
-from src.auth.users import change_password, validate_user
+from src.auth.users import change_password, get_password_hash, validate_user
+from src.constants import passwordError, passwordRegex
 from src.db.db_wrapper import engine
-from sqlalchemy import text
 
 router = APIRouter()
 
 
+def passwordValidation(password: str) -> str:
+    isValid = re.match(passwordRegex, password)
+
+    if not isValid:
+        raise HTTPException(422, passwordError)
+    return password
+
+
 class ChangePasswordForm(BaseModel):
-    username: str
+    username: EmailStr
     old_password: str
-    new_password: str
-    confirm_new_password: str
+    new_password: Annotated[str, AfterValidator(passwordValidation)]
+    confirm_new_password: Annotated[str, AfterValidator(passwordValidation)]
+
+
+class UserTypeEnum(str, Enum):
+    admin = "admin"
+    normal = "normal"
+
+
+class CreateUserForm(BaseModel):
+    email: EmailStr
+    password: Annotated[str, AfterValidator(passwordValidation)]
+    confirm_password: Annotated[str, AfterValidator(passwordValidation)]
+    user_type: UserTypeEnum
 
 
 @router.post("/Login")
@@ -93,9 +118,33 @@ async def get_all_users():
         results = connection.execute(
             text("SELECT user_id,email,user_type FROM login_user;")
         ).all()
-        print(results)
-        print([x._asdict() for x in results])
         return {"results": [x._asdict() for x in results]}
+
+
+@router.post("/CreateUser")
+async def create_user(form: CreateUserForm):
+    if form.password != form.confirm_password:
+        raise HTTPException(
+            422, "Password and confirm_passwords doesn't equate to each other"
+        )
+    with engine.begin() as connection:
+        try:
+            connection.execute(
+                text("""INSERT INTO login_user 
+                        (email,salted_password,user_type) 
+                        VALUES (:email,:salted_password,:user_type)
+            """),
+                [
+                    {
+                        "email": form.email,
+                        "salted_password": get_password_hash(form.password),
+                        "user_type": form.user_type.value,
+                    }
+                ],
+            )
+        except IntegrityError as exc:
+            raise HTTPException(422, "Email already in the database.")
+    return {"ok": True, "message": "successfully created a user"}
 
 
 # @router.get(

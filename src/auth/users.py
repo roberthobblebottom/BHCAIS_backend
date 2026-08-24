@@ -53,9 +53,7 @@ async def validate_user(user: OAuth2PasswordRequestForm = Depends()):
 
 
 async def change_password(email: str, salted_password: str):
-    print("change passwrod db")
     salted_password = get_password_hash(salted_password)
-    print("salted_password", salted_password)
     try:
         with engine.begin() as connection:
             connection.execute(
@@ -70,5 +68,4 @@ async def change_password(email: str, salted_password: str):
                 ],
             )
     except Exception as e:  # noqa: BLE001
-        print(e)
         raise Exception(e)  # noqa: TRY002
