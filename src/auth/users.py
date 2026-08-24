@@ -36,6 +36,7 @@ async def validate_user(user: OAuth2PasswordRequestForm = Depends()):
     try:
         db_user = await _get_user(user.username)
     except Exception as exc:
+        print("1")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -44,6 +45,7 @@ async def validate_user(user: OAuth2PasswordRequestForm = Depends()):
     # print("db_user [2] salted password from db", db_user[2])
     # print("a new password hash", get_password_hash(user.password))
     if not verify_password(user.password, db_user[2]):  # salted_password from db
+        print("2")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",

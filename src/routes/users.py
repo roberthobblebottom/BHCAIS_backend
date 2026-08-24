@@ -1,13 +1,9 @@
-import re
 from datetime import timedelta
-from enum import Enum
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import AfterValidator, BaseModel, EmailStr
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from src.auth.jwthandler import (
@@ -15,44 +11,15 @@ from src.auth.jwthandler import (
     create_access_token,
 )
 from src.auth.users import change_password, get_password_hash, validate_user
-from src.constants import passwordError, passwordRegex
 from src.db.db_wrapper import engine
+from src.Models import ChangePasswordForm, CreateUserForm
 
 router = APIRouter()
 
 
-def passwordValidation(password: str) -> str:
-    isValid = re.match(passwordRegex, password)
-
-    if not isValid:
-        raise HTTPException(422, passwordError)
-    return password
-
-
-class ChangePasswordForm(BaseModel):
-    username: EmailStr
-    old_password: str
-    new_password: Annotated[str, AfterValidator(passwordValidation)]
-    confirm_new_password: Annotated[str, AfterValidator(passwordValidation)]
-
-
-class UserTypeEnum(str, Enum):
-    admin = "admin"
-    normal = "normal"
-
-
-class CreateUserForm(BaseModel):
-    email: EmailStr
-    password: Annotated[str, AfterValidator(passwordValidation)]
-    confirm_password: Annotated[str, AfterValidator(passwordValidation)]
-    user_type: UserTypeEnum
-
-
 @router.post("/Login")
 async def login(user: OAuth2PasswordRequestForm = Depends()):
-    print("login function")
     user = await validate_user(user)
-    print("user", user)
     # user = None
     if not user:
         raise HTTPException(
@@ -142,7 +109,7 @@ async def create_user(form: CreateUserForm):
                     }
                 ],
             )
-        except IntegrityError as exc:
+        except IntegrityError:
             raise HTTPException(422, "Email already in the database.")
     return {"ok": True, "message": "successfully created a user"}
 
