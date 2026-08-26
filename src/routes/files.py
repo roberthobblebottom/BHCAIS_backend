@@ -43,7 +43,7 @@ class DownloadFilesModel(BaseModel):
     selected_catalogues: list[str]
 
 
-@router.get("/getCatalogue", status_code=200)
+@router.get("/GetCatalogue", status_code=200)
 async def getCatalogue(
     catalogue_name: str,
     rows_per_page: int,
@@ -108,7 +108,7 @@ async def getCatalogue(
         return {"results": results, "row_counts": row_counts}
 
 
-@router.post("/uploadFiles")
+@router.post("/UploadFiles")
 async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id: int):
     is_futher_processing_disabled = True
     results = []
@@ -884,7 +884,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
     return {"uploaded_files": results}
 
 
-@router.post("/deleteSelectedRows")
+@router.post("/DeleteSelectedRows")
 async def delete_selected_rows(model_instance: DeleteSelectedRowsModel):
     with engine.begin() as connection:
         connection.execute(
@@ -906,7 +906,7 @@ async def delete_selected_rows(model_instance: DeleteSelectedRowsModel):
     return {"ok": True, "message": "deleted selected rows"}
 
 
-@router.post("/downloadFiles")
+@router.post("/DownloadFiles")
 async def download_files(
     conditions: DownloadFilesModel,
 ):
