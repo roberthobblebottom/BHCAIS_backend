@@ -34,3 +34,15 @@ class CreateUserForm(BaseModel):
     password: Annotated[str, AfterValidator(passwordValidation)]
     confirm_password: Annotated[str, AfterValidator(passwordValidation)]
     user_type: UserTypeEnum
+
+
+class EditUserForm(BaseModel):
+    user_id: int
+    email: EmailStr
+    password: str
+    confirm_password: str
+    user_type: UserTypeEnum
+
+
+class DeleteUserForm(BaseModel):
+    user_id: int

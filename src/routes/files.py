@@ -1320,7 +1320,6 @@ def old_transformation_for_oral_history(
         .unique()
         .to_list()
     )
-
     try:
         with engine.begin() as connection:
             # Insert new interviewers if it does not exist

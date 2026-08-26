@@ -12,7 +12,13 @@ from src.auth.jwthandler import (
 )
 from src.auth.users import change_password, get_password_hash, validate_user
 from src.db.db_wrapper import engine
-from src.Models import ChangePasswordForm, CreateUserForm
+from src.Models import (
+    ChangePasswordForm,
+    CreateUserForm,
+    DeleteUserForm,
+    EditUserForm,
+    passwordValidation,
+)
 
 router = APIRouter()
 
@@ -21,6 +27,7 @@ router = APIRouter()
 async def login(user: OAuth2PasswordRequestForm = Depends()):
     user = await validate_user(user)
     # user = None
+    print("user", user)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -79,12 +86,15 @@ async def change_password_route(form: ChangePasswordForm):
     return {"ok": True, "message": "sucessfully changed the password"}
 
 
-@router.get("/GetAllUsers", status_code=200)
+@router.get("/GetAllUsers")
 async def get_all_users():
+    pass
+    print("get all users")
     with engine.begin() as connection:
         results = connection.execute(
             text("SELECT user_id,email,user_type FROM login_user;")
         ).all()
+        print("results", {"results": [x._asdict() for x in results]})
         return {"results": [x._asdict() for x in results]}
 
 
@@ -111,23 +121,65 @@ async def create_user(form: CreateUserForm):
             )
         except IntegrityError:
             raise HTTPException(422, "Email already in the database.")
+
     return {"ok": True, "message": "successfully created a user"}
 
 
-# @router.get(
-#     "/users/whoami", response_model=UserOutSchema, dependencies=[Depends(get_current_user)]
-# )
-# async def read_users_me(current_user: UserOutSchema = Depends(get_current_user)):
-#     return current_user
+@router.post("/EditUser")
+async def edit_user(form: EditUserForm):
+    if (
+        form.password != form.confirm_password
+        and form.password != ""
+        and form.confirm_new_password != ""
+    ):
+        raise HTTPException(
+            422, "Password and confirm_passwords doesn't equate to each other"
+        )
+    if form.password != "" and form.confirm_new_password != "":
+        passwordValidation(form.password)
+        passwordValidation(form.confirm_password)
+
+    with engine.begin() as connection:
+        print("edit user", form.user_type.value)
+        try:
+            connection.execute(
+                text("""UPDATE login_user 
+                        SET 
+                        email=:email,user_type=:user_type
+                        WHERE login_user.user_id = :user_id
+            """),
+                [
+                    {
+                        "email": form.email,
+                        "user_type": form.user_type.value,
+                        "user_id": form.user_id,
+                    }
+                ],
+            )
+        except IntegrityError:
+            raise HTTPException(422, "Email already in the database.")
+    # with engine.begin() as connection:
+    #     results = connection.execute(
+    #         text("SELECT user_id,email,user_type FROM login_user;")
+    #     ).all()
+    #     print("results", {"results": [x._asdict() for x in results]})
+    return {"ok": True, "message": "successfully Edit a user"}
 
 
-# @router.delete(
-#     "/user/{user_id}",
-#     response_model=Status,
-#     responses={404: {"model": HTTPNotFoundError}},
-#     dependencies=[Depends(get_current_user)],
-# )
-# async def delete_user(
-#     user_id: int, current_user: UserOutSchema = Depends(get_current_user)
-# ) -> Status:
-#     return await crud.delete_user(user_id, current_user)
+@router.post("/DeleteUser")
+async def delete_user(form: DeleteUserForm):
+    user_id = form.user_id
+    if user_id == None:
+        raise HTTPException(422, "user_id is null")
+    if user_id < 1:
+        raise HTTPException(422, "user_id is less than one")
+    with engine.begin() as connection:
+        try:
+            connection.execute(
+                text("""
+            DELETE FROM login_user WHERE user_id=:user_id
+            """),
+                [{"user_id": user_id}],
+            )
+        except Exception as exc:
+            raise HTTPException(442, exc)
