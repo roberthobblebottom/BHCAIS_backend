@@ -9,6 +9,7 @@ from src.constants import passwordError, passwordRegex
 router = APIRouter()
 
 
+# Users
 def passwordValidation(password: str) -> str:
     isValid = re.match(passwordRegex, password)
 
@@ -46,3 +47,15 @@ class EditUserForm(BaseModel):
 
 class DeleteUserForm(BaseModel):
     user_id: int
+
+
+# FILES
+class DownloadFilesModel(BaseModel):
+    # date_range: list[str]
+    search_terms: dict
+    selected_catalogues: list[str]
+
+
+class DeleteSelectedRowsModel(BaseModel):
+    ids_to_be_deleted: list[int]
+    catalogue_name: str

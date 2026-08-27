@@ -26,21 +26,11 @@ from ..constants import (
     slideHeaders,
     get_header_dict,
 )
-from pydantic import BaseModel
 from fastapi.responses import FileResponse
 
 router = APIRouter()
 
-
-class DeleteSelectedRowsModel(BaseModel):
-    ids_to_be_deleted: list[int]
-    catalogue_name: str
-
-
-class DownloadFilesModel(BaseModel):
-    # date_range: list[str]
-    search_term: str
-    selected_catalogues: list[str]
+from src.Models import DeleteSelectedRowsModel, DownloadFilesModel
 
 
 @router.get("/GetCatalogue", status_code=200)
@@ -919,20 +909,21 @@ async def download_files(
                     """
         where_sql_condition = ""
         where_sql_date_range_condition = ""
-        search_term = conditions.search_term
+        search_terms = conditions.search_terms
         # date_range = conditions.date_range
         # start_date = ""
         # end_date = ""
         # years = []
         params = {}
-        if search_term != "":
-            for i, x in enumerate(get_header_dict[catalogue_name]):
-                keyword = "WHERE" if i == 0 else "OR"
+        if len(search_terms.keys()) != 0:
+            for i, x in enumerate(search_terms[catalogue_name].items()):
+                keyword = (
+                    "WHERE" if i == 0 else "AND"
+                )  # Using OR returns too much back.
                 where_sql_condition += (
-                    f" {keyword} {literal_column(x)} ILIKE :search_term{i}"
+                    f" {keyword} {literal_column(x[0])} ILIKE :search_term{i}"
                 )
-            for x in range(len(get_header_dict[catalogue_name])):
-                params[f"search_term{x}"] = "%" + search_term + "%"
+                params[f"search_term{i}"] = "%" + x[1] + "%"
 
         # if len(date_range) != 0:
         #     print("date_range", date_range)
@@ -968,7 +959,6 @@ async def download_files(
                     "data": [x._asdict() for x in result],
                 }
             )
-    # print(results)
     return {"message": "success", "results": results}
 
 
