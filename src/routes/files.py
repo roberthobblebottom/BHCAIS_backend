@@ -1504,7 +1504,7 @@ def old_transformation_for_oral_history(
         pass
 
 
-@router.get("/DownloadTemplatesForTheCatelogs")
-def download_templates_for_the_catelogs():
-    file_path = "./templates for the catelogs.zip"
+@router.get("/DownloadTemplatesForTheCatalogs")
+def download_templates_for_the_catalogs():
+    file_path = "./templates for the catalogs.zip"
     return FileResponse(file_path, media_type="application/zip")
