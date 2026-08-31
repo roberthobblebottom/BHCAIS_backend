@@ -1,6 +1,5 @@
 import json  # noqa: I001
 from typing import Annotated
-
 import polars as pl
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from sqlalchemy import literal_column, bindparam
@@ -17,20 +16,26 @@ from src.db.db_wrapper import (
     localities_params_dict_sorting_of_names_and_ids,
     text,
 )
-
 from ..constants import (
-    libraryAndArchiveHeader,
-    negativeHeaders,
-    oralHistoryHeaders,
-    printHeaders,
-    slideHeaders,
+    library_and_archive_header,
+    negative_headers,
+    oral_history_headers,
+    print_headers,
+    slide_headers,
     get_header_dict,
+    legacy_and_miscellaneous_items_report_header,
+    # sql
+    legacy_and_miscellaneous_items_report_sql_string_columns,
+    library_and_archives_sql_string_columns,
+    print_sql_string_columns,
+    oral_histories_sql_string_columns,
+    negative_sql_string_columns,
+    slides_sql_string_columns,
 )
 from fastapi.responses import FileResponse
+from src.Models import DeleteSelectedRowsModel, DownloadFilesModel
 
 router = APIRouter()
-
-from src.Models import DeleteSelectedRowsModel, DownloadFilesModel
 
 
 @router.get("/GetCatalogue", status_code=200)
@@ -99,7 +104,7 @@ async def getCatalogue(
 
 
 @router.post("/UploadFiles")
-async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id: int):
+async def upload_files(files: Annotated[list[UploadFile], File()], user_id: int):
     is_futher_processing_disabled = True
     results = []
     for file in files:
@@ -128,53 +133,22 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
         cols = str([col.lower().strip() for col in df.columns if col != ""])
         print("cols", cols)
         if (
-            cols != printHeaders
-            and cols != oralHistoryHeaders
-            and cols != slideHeaders
-            and cols != negativeHeaders
-            and cols != libraryAndArchiveHeader
+            cols != print_headers
+            and cols != oral_history_headers
+            and cols != slide_headers
+            and cols != negative_headers
+            and cols != library_and_archive_header
+            and cols != legacy_and_miscellaneous_items_report_header
         ):
             raise HTTPException(
                 status_code=422,
                 detail="The file " + file.filename + "has incorrect or missing headers",
             )
         ### Individual Catalogue processing
-        if cols == printHeaders:
+        if cols == print_headers:
             # Raw Insertion
             df_raw = df.clone()
-            df_raw.columns = [
-                "continuous_sn_no",
-                "uid",
-                "album_no",
-                "object_condition_qc1",
-                "album_information_old",
-                "album_information_new",
-                "photograph_information",
-                "main_category",
-                "collector_name",
-                "day",
-                "month",
-                "year",
-                "country",
-                "locality",
-                "gps_coordinates",
-                "taxonomy",
-                "common_name",
-                "fieldnotes",
-                "keywords",
-                "location_in_lkcnhm",
-                "catalogued_by",
-                "catalogued_date",
-                "access_status",
-                "remarks",
-                "negative_yn",
-                "batch_no",
-                "sign_out_date",
-                "sign_in_date",
-                "date_of_qc",
-                "checked_by",
-                "object_condition_qc2",
-            ]
+            df_raw.columns = print_sql_string_columns
             with engine.begin() as connection:
                 connection.execute(
                     text(
@@ -282,42 +256,10 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 )
             if is_futher_processing_disabled:
                 return
-
-        elif cols == negativeHeaders:
+        elif cols == negative_headers:
             # Raw Insertion
             df_raw = df.clone()
-            df_raw.columns = [
-                "sn_no",
-                "uid",
-                "ziplock_bag_no",
-                "object_condition_qc1",
-                "ziplock_bag_information",
-                "negative_information",
-                "main_category",
-                "collector_name",
-                "day",
-                "month",
-                "year",
-                "country",
-                "locality",
-                "gps_coordinates",
-                "taxonomy",
-                "common_name",
-                "fieldnotes",
-                "keywords",
-                "location_stored",
-                "catalogued_by",
-                "catalogued_date",
-                "access_status",
-                "remarks",
-                "prints_yn",
-                "batch_no",
-                "sign_out_date",
-                "sign_in_date",
-                "date_of_qc",
-                "checked_by",
-                "object_condition_qc2",
-            ]
+            df_raw.columns = negative_sql_string_columns
             with engine.begin() as connection:
                 connection.execute(
                     text(
@@ -424,33 +366,10 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 if is_futher_processing_disabled:
                     return
                 # future futher processing logic here:
-        elif cols == oralHistoryHeaders:
+        elif cols == oral_history_headers:
             df_raw = df.clone()
-            df_raw.columns = [
-                "sn",
-                "name_of_interviewee",
-                "name_of_interviewee_2",
-                "recording_date_ddmmyyyy",
-                "track_number",
-                "total_tracks",
-                "running_time",
-                "file_name",
-                "format_original_file",
-                "access_conditions",
-                "access_remarks",
-                "transcription_status",
-                "editing_remarks",
-                "vetted_for_access",
-                "accession_status",
-                "languages",
-                "keywords",
-                "interview_location",
-                "interviewers",
-                "associated_materials",
-                "catalogued_by",
-                "catalogue_date",
-                "comments",
-            ]
+            df_raw.columns = oral_histories_sql_string_columns
+
             with engine.begin() as connection:
                 connection.execute(
                     text(
@@ -535,49 +454,10 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 )
             if is_futher_processing_disabled:
                 return
-
-        elif cols == libraryAndArchiveHeader:
+        elif cols == library_and_archive_header:
             df_raw = df.clone()
-            df_raw.columns = [
-                "sn",
-                "category",
-                "subcategory",
-                "catalog_number",
-                "object_status",
-                "location_in_museum",
-                "material_type",
-                "subject",
-                "shelving_location",
-                "condition",
-                "number_of_copies",
-                "full_title",
-                "journal_conference_report_workshop_name",
-                "edition_number",
-                "volume_number",
-                "issue_number",
-                "pages",
-                "author",
-                "from_year",
-                "from_month",
-                "from_date",
-                "to_year",
-                "to_month",
-                "to_date",
-                "isbnissn_number",
-                "language",
-                "country",
-                "publisher",
-                "organisation",
-                "collection_name",
-                "physical_description",
-                "abstract",
-                "keywords",
-                "remarks",
-                "recorded_by",
-                "recorded_year",
-                "scan_file_media",
-                "transcription_file_media",
-            ]
+            df_raw.columns = library_and_archives_sql_string_columns
+
             with engine.begin() as connection:
                 connection.execute(
                     text(
@@ -709,44 +589,9 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 )
             if is_futher_processing_disabled:
                 return
-        elif cols == slideHeaders:
+        elif cols == slide_headers:
             df_raw = df.clone()
-            df_raw.columns = [
-                "sn_no",
-                "uid",
-                "box_no",
-                "object_condition_qc1",
-                "box_information_old",
-                "box_information_new",
-                "divider_1",
-                "divider_2",
-                "divider_3",
-                "slides_information",
-                "main_category",
-                "collector_name",
-                "day",
-                "month",
-                "year",
-                "country",
-                "locality",
-                "gps_coordinates",
-                "taxonomy",
-                "common_name",
-                "fieldnotes",
-                "keywords",
-                "location_in_lkcnhm",
-                "catalogued_by",
-                "catalogued_date",
-                "access_status",
-                "remarks",
-                "batch_no",
-                "sign_out_date",
-                "sign_in_date",
-                "date_of_qc",
-                "checked_by",
-                "object_condition_qc2",
-                "data_tier_2_or_3",
-            ]
+            df_raw.columns = slides_sql_string_columns
             with engine.begin() as connection:
                 connection.execute(
                     text(
@@ -864,6 +709,163 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
                 )
             if is_futher_processing_disabled:
                 return
+        elif cols == legacy_and_miscellaneous_items_report_header:
+            df_raw = df.clone()
+            df_raw.columns = legacy_and_miscellaneous_items_report_sql_string_columns
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        """
+                        INSERT INTO legacy_and_miscellaneous_items_report_raw (
+                                      sn,
+                                        category,
+                                        catalog_number,
+                                        subcategory,
+                                        object_status,
+                                        name,
+                                        asset_number,
+                                        type_status,
+                                        individual_count,
+                                        preservation,
+                                        preservation_description_of_components,
+                                        location_in_museum,
+                                        sex,
+                                        treatment,
+                                        use_ethnographical_significance,
+                                        material,
+                                        condition,
+                                        dimensions,
+                                        higher_classification,
+                                        family,
+                                        genus,
+                                        subgenus,
+                                        species,
+                                        subspecies,
+                                        scientific_name_author,
+                                        scientific_name_author_year,
+                                        common_name,
+                                        country_ocean,
+                                        locality,
+                                        acquisition,
+                                        collected_by,
+                                        verbatim_date,
+                                        from_day,
+                                        from_month,
+                                        from_year,
+                                        to_day,
+                                        to_month,
+                                        to_year,
+                                        relative_humidity_for_storage_display,
+                                        temperature_celcius,
+                                        lux_light_levels,
+                                        remarks,
+                                        title,
+                                        web_url,
+                                        nas_link
+                                            ) VALUES (
+                                                :sn,
+                                                :category,
+                                                :catalog_number,
+                                                :subcategory,
+                                                :object_status,
+                                                :name,
+                                                :asset_number,
+                                                :type_status,
+                                                :individual_count,
+                                                :preservation,
+                                                :preservation_description_of_components,
+                                                :location_in_museum,
+                                                :sex,
+                                                :treatment,
+                                                :use_ethnographical_significance,
+                                                :material,
+                                                :condition,
+                                                :dimensions,
+                                                :higher_classification,
+                                                :family,
+                                                :genus,
+                                                :subgenus,
+                                                :species,
+                                                :subspecies,
+                                                :scientific_name_author,
+                                                :scientific_name_author_year,
+                                                :common_name,
+                                                :country_ocean,
+                                                :locality,
+                                                :acquisition,
+                                                :collected_by,
+                                                :verbatim_date,
+                                                :from_day,
+                                                :from_month,
+                                                :from_year,
+                                                :to_day,
+                                                :to_month,
+                                                :to_year,
+                                                :relative_humidity_for_storage_display,
+                                                :temperature_celcius,
+                                                :lux_light_levels,
+                                                :remarks,
+                                                :title,
+                                                :web_url,
+                                                :nas_link
+                                      
+                                   
+                            )ON CONFLICT (sn) 
+                            DO UPDATE
+                            SET
+                                category    = EXCLUDED.category,
+                                catalog_number   = EXCLUDED.catalog_number,
+                                subcategory   = EXCLUDED.subcategory,
+                                object_status  = EXCLUDED.object_status,
+                                name = EXCLUDED.name,
+                                asset_number    = EXCLUDED.asset_number,
+                                type_status  = EXCLUDED.type_status,
+                                individual_count   = EXCLUDED.individual_count,
+                                preservation  = EXCLUDED.preservation,
+                                preservation_description_of_components  = EXCLUDED.preservation_description_of_components,
+                                location_in_museum  = EXCLUDED.location_in_museum,
+                                sex  = EXCLUDED.sex,
+                                treatment  = EXCLUDED.treatment,
+                                use_ethnographical_significance   = EXCLUDED.use_ethnographical_significance,
+                                material  = EXCLUDED.material,
+                                condition  = EXCLUDED.condition,
+                                dimensions = EXCLUDED.dimensions,
+                                higher_classification  = EXCLUDED.higher_classification,
+                                family = EXCLUDED.family,
+                                genus = EXCLUDED.genus,
+                                subgenus = EXCLUDED.subgenus,
+                                species = EXCLUDED.species,
+                                subspecies  = EXCLUDED.subspecies,
+                                scientific_name_author  = EXCLUDED.scientific_name_author,
+                                scientific_name_author_year  = EXCLUDED.scientific_name_author_year,
+                                common_name = EXCLUDED.common_name,
+                                country_ocean = EXCLUDED.country_ocean,
+                                locality = EXCLUDED.locality,
+                                acquisition = EXCLUDED.acquisition,
+                                collected_by = EXCLUDED.collected_by,
+                                verbatim_date  = EXCLUDED.verbatim_date,
+                                from_day    = EXCLUDED.from_day,
+                                from_month    = EXCLUDED.from_month,
+                                from_year   = EXCLUDED.from_year,
+                                to_day   = EXCLUDED.to_day,
+                                to_month    = EXCLUDED.to_month,
+                                to_year  = EXCLUDED.to_year,
+                                relative_humidity_for_storage_display  = EXCLUDED.relative_humidity_for_storage_display,
+                                temperature_celcius  = EXCLUDED.temperature_celcius,
+                                lux_light_levels  = EXCLUDED.lux_light_levels,
+                                remarks = EXCLUDED.remarks,
+                                title  = EXCLUDED.title,
+                                web_url  = EXCLUDED.web_url,
+                                nas_link = EXCLUDED.nas_link
+                           
+
+                            """
+                    ),
+                    df_raw.to_dicts(),
+                )
+            if is_futher_processing_disabled:
+                return
+
         else:
             raise HTTPException(
                 status_code=422, detail="unable to decipher the catalog type"
@@ -876,6 +878,7 @@ async def create_upload_file(files: Annotated[list[UploadFile], File()], user_id
 
 @router.post("/DeleteSelectedRows")
 async def delete_selected_rows(model_instance: DeleteSelectedRowsModel):
+    print(model_instance)
     with engine.begin() as connection:
         connection.execute(
             text(

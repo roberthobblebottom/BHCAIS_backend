@@ -1,4 +1,4 @@
-printHeaders = [
+print_headers = [
     "Continuous S/N no.",
     "UID",
     "Album no.",
@@ -31,8 +31,9 @@ printHeaders = [
     "Checked by",
     "Object Condition (QC2)",
 ]
-printHeaders = str([col.strip().lower() for col in printHeaders])
-oralHistoryHeaders = [
+print_headers = str([col.strip().lower() for col in print_headers])
+
+oral_history_headers = [
     "S/N",
     "Name of Interviewee",
     "Name of Interviewee (2)",
@@ -57,9 +58,9 @@ oralHistoryHeaders = [
     "Catalogue Date",
     "Comments",
 ]
+oral_history_headers = str([col.strip().lower() for col in oral_history_headers])
 
-oralHistoryHeaders = str([col.strip().lower() for col in oralHistoryHeaders])
-negativeHeaders = [
+negative_headers = [
     "S/N no.",
     "UID",
     "Ziplock bag no.",
@@ -91,9 +92,9 @@ negativeHeaders = [
     "Checked by",
     "Object Condition (QC2)",
 ]
+negative_headers = str([col.strip().lower() for col in negative_headers])
 
-negativeHeaders = str([col.strip().lower() for col in negativeHeaders])
-slideHeaders = [
+slide_headers = [
     "S/N no.",
     "UID",
     "Box no.",
@@ -129,9 +130,9 @@ slideHeaders = [
     "Object Condition (QC2)",
     "Data Tier (2 or 3)",
 ]
+slide_headers = str([col.strip().lower() for col in slide_headers])
 
-slideHeaders = str([col.strip().lower() for col in slideHeaders])
-libraryAndArchiveHeader = [
+library_and_archive_header = [
     "S/N",
     "Category",
     "Subcategory",
@@ -171,10 +172,65 @@ libraryAndArchiveHeader = [
     "Scan file media",
     "Transcription file media",
 ]
+library_and_archive_header = str(
+    [col.strip().lower() for col in library_and_archive_header]
+)
 
-libraryAndArchiveHeader = str([col.strip().lower() for col in libraryAndArchiveHeader])
+
+legacy_and_miscellaneous_items_report_header = [
+    "S/N",
+    "Category",
+    "Catalog Number",
+    "Subcategory",
+    "Object Status",
+    "Name",
+    "Asset Number",
+    "Type Status",
+    "Individual Count",
+    "Preservation",
+    "Preservation - Description of components",
+    "Location (in Museum)",
+    "Sex",
+    "Treatment",
+    "Use - Ethnographical significance",
+    "Material",
+    "Condition",
+    "Dimensions",
+    "Higher Classification",
+    "Family",
+    "Genus",
+    "Subgenus",
+    "Species",
+    "Subspecies",
+    "Scientific Name Author",
+    "Scientific Name Author Year",
+    "Common Name",
+    "Country/ Ocean",
+    "Locality",
+    "Acquisition",
+    "Collected By",
+    "Verbatim Date",
+    "From Day",
+    "From Month",
+    "From Year",
+    "To Day",
+    "To Month",
+    "To Year",
+    "Relative Humidity [for storage/display]",
+    "Temperature (°C)",
+    "Lux [light levels]",
+    "Remarks",
+    "Title",
+    "Web URL",
+    "NAS Link",
+]
+legacy_and_miscellaneous_items_report_header = str(
+    [col.strip().lower() for col in legacy_and_miscellaneous_items_report_header]
+)
+
+
+# SQL STRINGS #######################################
 print_sql_string_columns = (
-    # "print_raw_id",
     "continuous_sn_no",
     "uid",
     "album_no",
@@ -208,7 +264,6 @@ print_sql_string_columns = (
     "object_condition_qc2",
 )
 oral_histories_sql_string_columns = (
-    # "oral_history_raw_id",
     "sn",
     "name_of_interviewee",
     "name_of_interviewee_2",
@@ -235,7 +290,6 @@ oral_histories_sql_string_columns = (
 )
 
 slides_sql_string_columns = (
-    # "slide_raw_id",
     "sn_no",
     "uid",
     "box_no",
@@ -273,7 +327,6 @@ slides_sql_string_columns = (
 )
 
 library_and_archives_sql_string_columns = (
-    # "oral_history_raw_id",
     "sn",
     "category",
     "subcategory",
@@ -315,7 +368,6 @@ library_and_archives_sql_string_columns = (
 )
 
 negative_sql_string_columns = (
-    # "negative_raw_id",
     "sn_no",
     "uid",
     "ziplock_bag_no",
@@ -347,12 +399,64 @@ negative_sql_string_columns = (
     "checked_by",
     "object_condition_qc2",
 )
+
+
+legacy_and_miscellaneous_items_report_sql_string_columns = [
+    "sn",
+    "category",
+    "catalog_number",
+    "subcategory",
+    "object_status",
+    "name",
+    "asset_number",
+    "type_status",
+    "individual_count",
+    "preservation",
+    "preservation_description_of_components",
+    "location_in_museum",
+    "sex",
+    "treatment",
+    "use_ethnographical_significance",
+    "material",
+    "condition",
+    "dimensions",
+    "higher_classification",
+    "family",
+    "genus",
+    "subgenus",
+    "species",
+    "subspecies",
+    "scientific_name_author",
+    "scientific_name_author_year",
+    "common_name",
+    "country_ocean",
+    "locality",
+    "acquisition",
+    "collected_by",
+    "verbatim_date",
+    "from_day",
+    "from_month",
+    "from_year",
+    "to_day",
+    "to_month",
+    "to_year",
+    "relative_humidity_for_storage_display",
+    "temperature_celcius",
+    "lux_light_levels",
+    "remarks",
+    "title",
+    "web_url",
+    "nas_link",
+]
+
+
 get_header_dict = {
     "print": print_sql_string_columns,
     "oral_history": oral_histories_sql_string_columns,
     "negative": negative_sql_string_columns,
     "slide": slides_sql_string_columns,
     "library_and_archive": library_and_archives_sql_string_columns,
+    "legacy_and_miscellaneous_items_report": legacy_and_miscellaneous_items_report_sql_string_columns,
 }
 passwordRegex = r"^(?=.*[a-z])(?=.*[0-9])\S{7,}$"
 passwordError = (
