@@ -462,5 +462,13 @@ passwordRegex = r"^(?=.*[a-z])(?=.*[0-9])\S{7,}$"
 passwordError = (
     "Passwords must at least have 7 charactors, one lower case and one upper case"
 )
+catalogue_names = [
+    "print",
+    "oral_history",
+    "negative",
+    "slide",
+    "library_and_archive",
+    "legacy_and_miscellaneous_items_report",
+]
 if __name__ == "__main__":
     print()

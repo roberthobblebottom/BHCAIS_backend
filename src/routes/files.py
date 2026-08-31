@@ -910,7 +910,7 @@ async def download_files(
         sql = f"""
                 SELECT * FROM {literal_column(catalogue_name)}_raw
                     """
-        where_sql_condition = ""
+        where_condition = ""
         where_sql_date_range_condition = ""
         search_terms = conditions.search_terms
         # date_range = conditions.date_range
@@ -918,16 +918,15 @@ async def download_files(
         # end_date = ""
         # years = []
         params = {}
-        if len(search_terms.keys()) != 0:
+        if len(search_terms.keys()) != 0 and catalogue_name in search_terms:
             for i, x in enumerate(search_terms[catalogue_name].items()):
                 keyword = (
                     "WHERE" if i == 0 else "AND"
                 )  # Using OR returns too much back.
-                where_sql_condition += (
+                where_condition += (
                     f" {keyword} {literal_column(x[0])} ILIKE :search_term{i}"
                 )
                 params[f"search_term{i}"] = "%" + x[1] + "%"
-
         # if len(date_range) != 0:
         #     print("date_range", date_range)
 
@@ -952,7 +951,7 @@ async def download_files(
 
         with engine.begin() as connection:
             result = connection.execute(
-                text(sql + where_sql_condition + where_sql_date_range_condition),
+                text(sql + where_condition + where_sql_date_range_condition),
                 [params],
             ).all()
 
