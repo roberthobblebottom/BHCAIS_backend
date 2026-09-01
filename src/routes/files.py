@@ -2,6 +2,7 @@ import json  # noqa: I001
 from typing import Annotated
 import polars as pl
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlalchemy import literal_column, bindparam
 from sqlalchemy.exc import IntegrityError
 from src.db.db_wrapper import (
@@ -22,9 +23,9 @@ from ..constants import (
     oral_history_headers,
     print_headers,
     slide_headers,
-    get_header_dict,
     legacy_and_miscellaneous_items_report_header,
     # sql
+    get_header_dict,
     legacy_and_miscellaneous_items_report_sql_string_columns,
     library_and_archives_sql_string_columns,
     print_sql_string_columns,
@@ -285,7 +286,7 @@ async def upload_files(files: Annotated[list[UploadFile], File()], user_id: int)
                             keywords ,
                             location_stored ,
                             catalogued_by ,
-                           catalogued_date ,
+                            catalogued_date ,
                             access_status ,
                             remarks ,
                             prints_yn ,
@@ -762,52 +763,52 @@ async def upload_files(files: Annotated[list[UploadFile], File()], user_id: int)
                                         title,
                                         web_url,
                                         nas_link
-                                            ) VALUES (
-                                                :sn,
-                                                :category,
-                                                :catalog_number,
-                                                :subcategory,
-                                                :object_status,
-                                                :name,
-                                                :asset_number,
-                                                :type_status,
-                                                :individual_count,
-                                                :preservation,
-                                                :preservation_description_of_components,
-                                                :location_in_museum,
-                                                :sex,
-                                                :treatment,
-                                                :use_ethnographical_significance,
-                                                :material,
-                                                :condition,
-                                                :dimensions,
-                                                :higher_classification,
-                                                :family,
-                                                :genus,
-                                                :subgenus,
-                                                :species,
-                                                :subspecies,
-                                                :scientific_name_author,
-                                                :scientific_name_author_year,
-                                                :common_name,
-                                                :country_ocean,
-                                                :locality,
-                                                :acquisition,
-                                                :collected_by,
-                                                :verbatim_date,
-                                                :from_day,
-                                                :from_month,
-                                                :from_year,
-                                                :to_day,
-                                                :to_month,
-                                                :to_year,
-                                                :relative_humidity_for_storage_display,
-                                                :temperature_celcius,
-                                                :lux_light_levels,
-                                                :remarks,
-                                                :title,
-                                                :web_url,
-                                                :nas_link
+                                        ) VALUES (
+                                            :sn,
+                                            :category,
+                                            :catalog_number,
+                                            :subcategory,
+                                            :object_status,
+                                            :name,
+                                            :asset_number,
+                                            :type_status,
+                                            :individual_count,
+                                            :preservation,
+                                            :preservation_description_of_components,
+                                            :location_in_museum,
+                                            :sex,
+                                            :treatment,
+                                            :use_ethnographical_significance,
+                                            :material,
+                                            :condition,
+                                            :dimensions,
+                                            :higher_classification,
+                                            :family,
+                                            :genus,
+                                            :subgenus,
+                                            :species,
+                                            :subspecies,
+                                            :scientific_name_author,
+                                            :scientific_name_author_year,
+                                            :common_name,
+                                            :country_ocean,
+                                            :locality,
+                                            :acquisition,
+                                            :collected_by,
+                                            :verbatim_date,
+                                            :from_day,
+                                            :from_month,
+                                            :from_year,
+                                            :to_day,
+                                            :to_month,
+                                            :to_year,
+                                            :relative_humidity_for_storage_display,
+                                            :temperature_celcius,
+                                            :lux_light_levels,
+                                            :remarks,
+                                            :title,
+                                            :web_url,
+                                            :nas_link
                                       
                                    
                             )ON CONFLICT (sn) 
@@ -857,8 +858,6 @@ async def upload_files(files: Annotated[list[UploadFile], File()], user_id: int)
                                 title  = EXCLUDED.title,
                                 web_url  = EXCLUDED.web_url,
                                 nas_link = EXCLUDED.nas_link
-                           
-
                             """
                     ),
                     df_raw.to_dicts(),
@@ -899,7 +898,7 @@ async def delete_selected_rows(model_instance: DeleteSelectedRowsModel):
     return {"ok": True, "message": "deleted selected rows"}
 
 
-@router.post("/DownloadFiles")
+@router.post("/DownloadFiles", response_class=StreamingResponse)
 async def download_files(
     conditions: DownloadFilesModel,
 ):
@@ -907,9 +906,7 @@ async def download_files(
         raise HTTPException(422, "Missing selected catalogue names.")
     results = []
     for catalogue_name in conditions.selected_catalogues:
-        sql = f"""
-                SELECT * FROM {literal_column(catalogue_name)}_raw
-                    """
+        sql = f"""SELECT * FROM {literal_column(catalogue_name)}_raw"""
         where_condition = ""
         where_sql_date_range_condition = ""
         search_terms = conditions.search_terms
@@ -955,13 +952,16 @@ async def download_files(
                 [params],
             ).all()
 
-            results.append(
-                {
-                    "catalogue_name": catalogue_name,
-                    "data": [x._asdict() for x in result],
-                }
-            )
-    return {"message": "success", "results": results}
+            # results.append(
+            #     {
+            #         "catalogue_name": catalogue_name,
+            #         "data": [x._asdict() for x in result],
+            #     }
+            # )
+            yield "catalogue_name=" + catalogue_name
+            for i, x in enumerate(result):
+                yield json.dumps(x._asdict()) + ","
+    # return {"message": "success", "results": results}
 
 
 def old_transformation_for_print(df, user_id):
