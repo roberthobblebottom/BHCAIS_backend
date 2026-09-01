@@ -40,7 +40,7 @@ router = APIRouter()
 
 
 @router.get("/GetCatalogue", status_code=200)
-async def getCatalogue(
+async def get_catalogue(
     catalogue_name: str,
     rows_per_page: int,
     current_page_number: int,
@@ -83,7 +83,6 @@ async def getCatalogue(
             + order_by_sql_condition
             + " LIMIT :fetch_count OFFSET :start_row;"
         )
-        print("sql", sql)
         params = {
             "sort_by": sort_by,
             "fetch_count": fetchCount,
@@ -92,7 +91,6 @@ async def getCatalogue(
         if filter_str != "":
             for x in range(len(get_header_dict[catalogue_name])):
                 params[f"filter_str{x}"] = filter_str
-        print("params", params)
         results = [
             row._asdict()
             for row in connection.execute(
@@ -100,7 +98,6 @@ async def getCatalogue(
                 [params],
             ).all()
         ]
-        print("results", results)
         return {"results": results, "row_counts": row_counts}
 
 
@@ -959,8 +956,11 @@ async def download_files(
             #     }
             # )
             yield "catalogue_name=" + catalogue_name
-            for i, x in enumerate(result):
-                yield json.dumps(x._asdict()) + ","
+            if len(result) > 0:
+                for i, x in enumerate(result):
+                    yield json.dumps(x._asdict()) + ","
+            else:
+                yield " no results"
     # return {"message": "success", "results": results}
 
 
