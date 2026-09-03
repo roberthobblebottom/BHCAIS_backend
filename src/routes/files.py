@@ -1,7 +1,7 @@
 import json  # noqa: I001
 from typing import Annotated
 import polars as pl
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from sqlalchemy import literal_column, bindparam
 from sqlalchemy.exc import IntegrityError
@@ -18,12 +18,12 @@ from src.db.db_wrapper import (
     text,
 )
 from ..constants import (
-    library_and_archive_header,
-    negative_headers,
-    oral_history_headers,
-    print_headers,
-    slide_headers,
-    legacy_and_miscellaneous_items_report_header,
+    # library_and_archive_header,
+    # negative_headers,
+    # oral_history_headers,
+    # print_headers,
+    # slide_headers,
+    # legacy_and_miscellaneous_items_report_header,
     # sql
     get_header_dict,
     legacy_and_miscellaneous_items_report_sql_string_columns,
@@ -101,56 +101,53 @@ async def get_catalogue(
         return {"results": results, "row_counts": row_counts}
 
 
-@router.post("/UploadFiles")
-async def upload_files(files: Annotated[list[UploadFile], File()], user_id: int):
-    is_futher_processing_disabled = True
-    results = []
-    for file in files:
-        contents = await file.read()
+async def _upsert_into_db(file: File):
+    contents = await file.read()
 
-        # Checking of validity of the files:
-        if ".xlsx" in file.filename:
-            df = pl.read_excel(contents, infer_schema_length=0)
-        elif ".csv" in file.filename:
-            df = pl.read_csv(contents, infer_schema_length=0)
-            while "" in df.columns:
-                df = df.drop("")
-        else:
-            raise HTTPException(
-                status_code=422,
-                details="The file " + file.filename + " is not in .csv or .xlsx",
-            )
+    # Checking of validity of the files::w
 
-        if df.shape[0] <= 1:
-            raise HTTPException(
-                status_code=422,
-                detail="The file "
-                + file.filename
-                + " is either empty or only contains header",
-            )
-        cols = str([col.lower().strip() for col in df.columns if col != ""])
-        print("cols", cols)
-        if (
-            cols != print_headers
-            and cols != oral_history_headers
-            and cols != slide_headers
-            and cols != negative_headers
-            and cols != library_and_archive_header
-            and cols != legacy_and_miscellaneous_items_report_header
-        ):
-            raise HTTPException(
-                status_code=422,
-                detail="The file " + file.filename + "has incorrect or missing headers",
-            )
-        ### Individual Catalogue processing
-        if cols == print_headers:
-            # Raw Insertion
-            df_raw = df.clone()
-            df_raw.columns = print_sql_string_columns
-            with engine.begin() as connection:
-                connection.execute(
-                    text(
-                        """
+    if ".xlsx" in file.filename:
+        df = pl.read_excel(contents, infer_schema_length=0)
+    elif ".csv" in file.filename:
+        df = pl.read_csv(contents, infer_schema_length=0)
+        while "" in df.columns:
+            df = df.drop("")
+    else:
+        raise HTTPException(
+            status_code=422,
+            details="The file " + file.filename + " is not in .csv or .xlsx",
+        )
+
+    if df.shape[0] <= 1:
+        raise HTTPException(
+            status_code=422,
+            detail="The file "
+            + file.filename
+            + " is either empty or only contains header",
+        )
+    cols = [col.lower().strip() for col in df.columns if col != ""]
+    print("cols", cols)
+    print(oral_histories_sql_string_columns)
+
+    if (
+        cols != print_sql_string_columns
+        and cols != oral_histories_sql_string_columns
+        and cols != slides_sql_string_columns
+        and cols != negative_sql_string_columns
+        and cols != library_and_archives_sql_string_columns
+        and cols != legacy_and_miscellaneous_items_report_sql_string_columns
+    ):
+        print(file.name + " have incorrect or missing headers")
+        return
+
+    ### Individual Catalogue processing
+    if cols == print_sql_string_columns:
+        # Raw Insertion
+        df_raw = df.clone()
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
                             INSERT INTO print_raw (
                                         continuous_sn_no ,
                                         uid ,
@@ -249,19 +246,16 @@ async def upload_files(files: Annotated[list[UploadFile], File()], user_id: int)
                                 checked_by = EXCLUDED.checked_by ,
                                 object_condition_qc2 = EXCLUDED.object_condition_qc2
                             """
-                    ),
-                    df_raw.to_dicts(),
-                )
-            if is_futher_processing_disabled:
-                return
-        elif cols == negative_headers:
-            # Raw Insertion
-            df_raw = df.clone()
-            df_raw.columns = negative_sql_string_columns
-            with engine.begin() as connection:
-                connection.execute(
-                    text(
-                        """
+                ),
+                df_raw.to_dicts(),
+            )
+    elif cols == negative_sql_string_columns:
+        # Raw Insertion
+        df_raw = df.clone()
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
                         INSERT INTO negative_raw (
                             sn_no ,
                             uid ,
@@ -358,20 +352,17 @@ async def upload_files(files: Annotated[list[UploadFile], File()], user_id: int)
                             checked_by = EXCLUDED.checked_by ,
                             object_condition_qc2 = EXCLUDED.object_condition_qc2  
                             """
-                    ),
-                    df_raw.to_dicts(),
-                )
-                if is_futher_processing_disabled:
-                    return
-                # future futher processing logic here:
-        elif cols == oral_history_headers:
-            df_raw = df.clone()
-            df_raw.columns = oral_histories_sql_string_columns
+                ),
+                df_raw.to_dicts(),
+            )
+            # future futher processing logic here:
+    elif cols == oral_histories_sql_string_columns:
+        df_raw = df.clone()
 
-            with engine.begin() as connection:
-                connection.execute(
-                    text(
-                        """
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
                         INSERT INTO oral_history_raw (
                                   sn ,
                                     name_of_interviewee ,
@@ -447,19 +438,16 @@ async def upload_files(files: Annotated[list[UploadFile], File()], user_id: int)
                                     catalogue_date = EXCLUDED.catalogue_date ,
                                     comments = EXCLUDED.comments 
                             """
-                    ),
-                    df_raw.to_dicts(),
-                )
-            if is_futher_processing_disabled:
-                return
-        elif cols == library_and_archive_header:
-            df_raw = df.clone()
-            df_raw.columns = library_and_archives_sql_string_columns
+                ),
+                df_raw.to_dicts(),
+            )
+    elif cols == library_and_archives_sql_string_columns:
+        df_raw = df.clone()
 
-            with engine.begin() as connection:
-                connection.execute(
-                    text(
-                        """
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
                         INSERT INTO library_and_archive_raw (
                                 sn ,
                                 category ,
@@ -582,18 +570,15 @@ async def upload_files(files: Annotated[list[UploadFile], File()], user_id: int)
                                 transcription_file_media = EXCLUDED.transcription_file_media 
 
                             """
-                    ),
-                    df_raw.to_dicts(),
-                )
-            if is_futher_processing_disabled:
-                return
-        elif cols == slide_headers:
-            df_raw = df.clone()
-            df_raw.columns = slides_sql_string_columns
-            with engine.begin() as connection:
-                connection.execute(
-                    text(
-                        """
+                ),
+                df_raw.to_dicts(),
+            )
+    elif cols == slides_sql_string_columns:
+        df_raw = df.clone()
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
                         INSERT INTO slide_raw (
                                     sn_no ,
                                     uid ,
@@ -702,18 +687,15 @@ async def upload_files(files: Annotated[list[UploadFile], File()], user_id: int)
                                     object_condition_qc2 = EXCLUDED.object_condition_qc2 ,
                                     data_tier_2_or_3 = EXCLUDED.data_tier_2_or_3  
                             """
-                    ),
-                    df_raw.to_dicts(),
-                )
-            if is_futher_processing_disabled:
-                return
-        elif cols == legacy_and_miscellaneous_items_report_header:
-            df_raw = df.clone()
-            df_raw.columns = legacy_and_miscellaneous_items_report_sql_string_columns
-            with engine.begin() as connection:
-                connection.execute(
-                    text(
-                        """
+                ),
+                df_raw.to_dicts(),
+            )
+    elif cols == legacy_and_miscellaneous_items_report_sql_string_columns:
+        df_raw = df.clone()
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
                         INSERT INTO legacy_and_miscellaneous_items_report_raw (
                                       sn,
                                         category,
@@ -856,19 +838,38 @@ async def upload_files(files: Annotated[list[UploadFile], File()], user_id: int)
                                 web_url  = EXCLUDED.web_url,
                                 nas_link = EXCLUDED.nas_link
                             """
-                    ),
-                    df_raw.to_dicts(),
-                )
-            if is_futher_processing_disabled:
-                return
-
-        else:
-            raise HTTPException(
-                status_code=422, detail="unable to decipher the catalog type"
+                ),
+                df_raw.to_dicts(),
             )
 
-        results = []
-        results.append({"filename": file.filename})
+    else:
+        raise HTTPException(
+            status_code=422, detail="unable to decipher the catalog type"
+        )
+
+    results = []
+    results.append({"filename": file.filename})
+
+
+@router.post("/UploadFiles")
+async def upload_files(
+    files: Annotated[list[UploadFile], File()],
+    user_id: int,
+    background_tasks: BackgroundTasks,
+):
+    results = []
+    for file in files:
+        print("pre check", file.filename)
+    for file in files:
+        background_tasks.add_task(_upsert_into_db, file)
+
+    # if len(files_with_errors) > 0:
+    #     raise HTTPException(
+    #         status_code=422,
+    #         detail="The file "
+    #         + files_with_errors.join(",")
+    #         + " has incorrect or missing headers",
+    #     )
     return {"uploaded_files": results}
 
 
