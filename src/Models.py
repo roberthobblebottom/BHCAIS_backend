@@ -57,5 +57,6 @@ class DownloadFilesModel(BaseModel):
 
 
 class DeleteSelectedRowsModel(BaseModel):
-    ids_to_be_deleted: list[int]
+    ids_to_be_deleted: list[str]
     catalogue_name: str
+    current_primary_key: str

@@ -126,8 +126,6 @@ async def _upsert_into_db(file: File):
             + " is either empty or only contains header",
         )
     cols = [col.lower().strip() for col in df.columns if col != ""]
-    print("cols", cols)
-    print(oral_histories_sql_string_columns)
 
     if (
         cols != print_sql_string_columns
@@ -875,13 +873,12 @@ async def upload_files(
 
 @router.post("/DeleteSelectedRows")
 async def delete_selected_rows(model_instance: DeleteSelectedRowsModel):
-    print(model_instance)
     with engine.begin() as connection:
         connection.execute(
             text(
                 f"""
         DELETE FROM {literal_column(model_instance.catalogue_name)}_raw 
-        WHERE {literal_column(model_instance.catalogue_name)}_raw_id IN :ids_to_be_deleted
+        WHERE {literal_column(model_instance.current_primary_key)} IN :ids_to_be_deleted
         """,
             )
             .bindparams(
