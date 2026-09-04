@@ -109,7 +109,7 @@ async def _upsert_into_db(file: File):
     if ".xlsx" in file.filename:
         df = pl.read_excel(contents, infer_schema_length=0)
     elif ".csv" in file.filename:
-        df = pl.read_csv(contents, infer_schema_length=0)
+        df = pl.read_csv(contents, infer_schema_length=0, ignore_errors=True)
         while "" in df.columns:
             df = df.drop("")
     else:
@@ -118,6 +118,15 @@ async def _upsert_into_db(file: File):
             details="The file " + file.filename + " is not in .csv or .xlsx",
         )
 
+    df = df.with_columns(pl.all().cast(pl.String, strict=True)).with_columns(
+        pl.when(pl.all().str.starts_with("'") & pl.all().str.ends_with("'"))
+        .then(pl.all().str.slice(1, pl.all().str.len_chars() - 2))
+        .otherwise(pl.all())
+        .str.replace_all("__SEMICOLON__", ";")
+        .str.replace_all("__COMMA__", ",")
+        .str.replace_all("__SINGLEQUOTE__", "'")
+        .str.replace_all("__NEW_LINE__", "\n")
+    )
     if df.shape[0] <= 1:
         raise HTTPException(
             status_code=422,
@@ -141,7 +150,16 @@ async def _upsert_into_db(file: File):
     ### Individual Catalogue processing
     if cols == print_sql_string_columns:
         # Raw Insertion
-        df_raw = df.clone()
+        df_raw = df.clone().with_columns(
+            # df["remarks"]
+            # .str.replace('"', '"', literal=True)
+            # .str.replace(";", r"\;", literal=True),
+            # df["photograph_information"]
+            # .str.replace('"', '"', literal=True)
+            # .str.replace(";", r"\;", literal=True),
+        )
+        print(df_raw)
+        print(df_raw["remarks"])
         with engine.begin() as connection:
             connection.execute(
                 text(
@@ -858,7 +876,6 @@ async def upload_files(
     results = []
     for file in files:
         print("pre check", file.filename)
-    for file in files:
         background_tasks.add_task(_upsert_into_db, file)
 
     # if len(files_with_errors) > 0:
