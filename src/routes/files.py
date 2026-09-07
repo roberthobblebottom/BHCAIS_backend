@@ -18,13 +18,6 @@ from src.db.db_wrapper import (
     text,
 )
 from ..constants import (
-    # library_and_archive_header,
-    # negative_headers,
-    # oral_history_headers,
-    # print_headers,
-    # slide_headers,
-    # legacy_and_miscellaneous_items_report_header,
-    # sql
     get_header_dict,
     legacy_and_miscellaneous_items_report_sql_string_columns,
     library_and_archives_sql_string_columns,
@@ -158,8 +151,7 @@ async def _upsert_into_db(file: File):
             # .str.replace('"', '"', literal=True)
             # .str.replace(";", r"\;", literal=True),
         )
-        print(df_raw)
-        print(df_raw["remarks"])
+
         with engine.begin() as connection:
             connection.execute(
                 text(
@@ -878,13 +870,6 @@ async def upload_files(
         print("pre check", file.filename)
         background_tasks.add_task(_upsert_into_db, file)
 
-    # if len(files_with_errors) > 0:
-    #     raise HTTPException(
-    #         status_code=422,
-    #         detail="The file "
-    #         + files_with_errors.join(",")
-    #         + " has incorrect or missing headers",
-    #     )
     return {"uploaded_files": results}
 
 
@@ -921,10 +906,6 @@ async def download_files(
         where_condition = ""
         where_sql_date_range_condition = ""
         search_terms = conditions.search_terms
-        # date_range = conditions.date_range
-        # start_date = ""
-        # end_date = ""
-        # years = []
         params = {}
         if len(search_terms.keys()) != 0 and catalogue_name in search_terms:
             for i, x in enumerate(search_terms[catalogue_name].items()):
@@ -935,27 +916,6 @@ async def download_files(
                     f" {keyword} {literal_column(x[0])} ILIKE :search_term{i}"
                 )
                 params[f"search_term{i}"] = "%" + x[1] + "%"
-        # if len(date_range) != 0:
-        #     print("date_range", date_range)
-
-        #     if catalogue_name == "library_and_archive":
-        #         where_sql_date_range_condition = "recorded_year IN ARRAY(:years)"
-
-        #     else:
-        #         start_date = date_range[0]
-        #         end_date = date_range[1]
-        #         print("start_date", start_date)
-        #         print("end_date", end_date)
-        #         where_sql_date_range_condition = (
-        #             "catalogued_date BETWEEN :start_date AND :end_date"
-        #         )
-
-        #     where_sql_date_range_condition = (
-        #         "WHERE " + where_sql_date_range_condition
-        #         if search_term == ""
-        #         else "AND" + where_sql_date_range_condition
-        #     )
-        #     print("where_sql_date_range_condition", where_sql_date_range_condition)
 
         with engine.begin() as connection:
             result = connection.execute(
@@ -963,19 +923,12 @@ async def download_files(
                 [params],
             ).all()
 
-            # results.append(
-            #     {
-            #         "catalogue_name": catalogue_name,
-            #         "data": [x._asdict() for x in result],
-            #     }
-            # )
             yield "catalogue_name=" + catalogue_name
             if len(result) > 0:
                 for i, x in enumerate(result):
                     yield json.dumps(x._asdict()) + ","
             else:
                 yield " no results"
-    # return {"message": "success", "results": results}
 
 
 def old_transformation_for_print(df, user_id):
