@@ -895,6 +895,21 @@ async def delete_selected_rows(model_instance: DeleteSelectedRowsModel):
     return {"ok": True, "message": "deleted selected rows"}
 
 
+@router.post("/DeleteAllCatalogueData")
+async def delete_all_catalogue_data():
+    with engine.begin() as connection:
+        connection.execute(
+            text("""DELETE FROM print_raw;
+                    DELETE FROM oral_history_raw;
+                    DELETE FROM negative_raw;
+                    DELETE FROM slide_raw;
+                    DELETE FROM library_and_archive_raw;
+                    DELETE FROM legacy_and_miscellaneous_items_report_raw; 
+    """)
+        )
+    return {"ok": True, "message": "deleted all catalogue data"}
+
+
 @router.post("/DownloadFiles", response_class=StreamingResponse)
 async def download_files(
     conditions: DownloadFilesModel,
