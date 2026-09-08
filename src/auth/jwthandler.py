@@ -82,7 +82,6 @@ def route_auth_by_token(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
 
-    # get user
     print("auth success")
     return email
 
@@ -106,6 +105,5 @@ def admin_route_auth_by_token(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
 
-    # get user
     print("auth success")
     return email
