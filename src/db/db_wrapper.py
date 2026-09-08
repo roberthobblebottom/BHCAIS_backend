@@ -161,3 +161,13 @@ def does_user_exist_in_db(email: str):
         return connection.execute(
             text("SELECT 1 FROM login_user WHERE  email=:email"), [{"email": email}]
         ).first()
+
+
+def does_admin_exist_in_db(email: str, user_type: str):
+    with engine.begin() as connection:
+        return connection.execute(
+            text(
+                "SELECT 1 FROM login_user WHERE  email=:email AND user_type=:user_type"
+            ),
+            [{"email": email, "user_type": user_type}],
+        ).first()

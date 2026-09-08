@@ -24,6 +24,7 @@ class ChangePasswordForm(BaseModel):
     old_password: str
     new_password: Annotated[str, AfterValidator(passwordValidation)]
     confirm_new_password: Annotated[str, AfterValidator(passwordValidation)]
+    token: str
 
 
 class UserTypeEnum(str, Enum):
@@ -36,6 +37,7 @@ class CreateUserForm(BaseModel):
     password: Annotated[str, AfterValidator(passwordValidation)]
     confirm_password: Annotated[str, AfterValidator(passwordValidation)]
     user_type: UserTypeEnum
+    token: str
 
 
 class EditUserForm(BaseModel):
@@ -44,10 +46,12 @@ class EditUserForm(BaseModel):
     password: str
     confirm_password: str
     user_type: UserTypeEnum
+    token: str
 
 
 class DeleteUserForm(BaseModel):
     user_id: int
+    token: str
 
 
 # FILES

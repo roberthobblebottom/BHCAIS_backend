@@ -8,9 +8,15 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from src.auth.jwthandler import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
+    admin_route_auth_by_token,
     create_access_token,
+    route_auth_by_token,
 )
-from src.auth.users import change_password, get_password_hash, validate_user
+from src.auth.users import (
+    change_password,
+    get_password_hash,
+    validate_user,
+)
 from src.db.db_wrapper import engine
 from src.Models import (
     ChangePasswordForm,
@@ -62,6 +68,7 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):
 
 @router.post("/ChangePassword")
 async def change_password_route(form: ChangePasswordForm):
+    Depends(route_auth_by_token(form.token))
     if (
         form.new_password != form.confirm_new_password
         or form.new_password == ""
@@ -97,6 +104,9 @@ async def get_all_users():
 
 @router.post("/CreateUser")
 async def create_user(form: CreateUserForm):
+    print(form)
+    Depends(admin_route_auth_by_token(form.token))
+    print("1")
     if form.password != form.confirm_password:
         raise HTTPException(
             422, "Password and confirm_passwords doesn't equate to each other"
@@ -124,6 +134,7 @@ async def create_user(form: CreateUserForm):
 
 @router.post("/EditUser")
 async def edit_user(form: EditUserForm):
+    Depends(admin_route_auth_by_token(form.token))
     if (
         form.password != form.confirm_password
         and form.password != ""
@@ -137,7 +148,6 @@ async def edit_user(form: EditUserForm):
         passwordValidation(form.confirm_password)
 
     with engine.begin() as connection:
-        print("edit user", form.user_type.value)
         try:
             connection.execute(
                 text("""UPDATE login_user 
@@ -165,6 +175,7 @@ async def edit_user(form: EditUserForm):
 
 @router.post("/DeleteUser")
 async def delete_user(form: DeleteUserForm):
+    Depends(admin_route_auth_by_token(form.token))
     user_id = form.user_id
     if user_id == None:
         raise HTTPException(422, "user_id is null")

@@ -8,7 +8,7 @@ from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2, OAuth2PasswordBearer
 from fastapi.security.utils import get_authorization_scheme_param
 from jose import JWTError, jwt
-from src.db.db_wrapper import does_user_exist_in_db
+from src.db.db_wrapper import does_admin_exist_in_db, does_user_exist_in_db
 
 load_dotenv()
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
@@ -71,7 +71,7 @@ def route_auth_by_token(token: str = Depends(oauth2_scheme)):
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    print("token", token)
+    print("route auth by token")
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("email")
@@ -83,5 +83,29 @@ def route_auth_by_token(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
 
     # get user
-    print("sucess")
+    print("auth success")
+    return email
+
+
+def admin_route_auth_by_token(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    print("admin route auth by token")
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("email")
+        user_type: str = payload.get("user_type")
+        if email is None or user_type is None:
+            raise credentials_exception
+
+        if not does_admin_exist_in_db(email, user_type):
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    # get user
+    print("auth success")
     return email
