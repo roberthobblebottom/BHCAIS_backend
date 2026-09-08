@@ -27,7 +27,6 @@ router = APIRouter()
 async def login(user: OAuth2PasswordRequestForm = Depends()):
     user = await validate_user(user)
     # user = None
-    print("user", user)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -36,7 +35,7 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user[1]},
+        data={"email": user[1], "user_type": user[3]},
         expires_delta=access_token_expires,  # user[1] is email
     )
     token = jsonable_encoder(access_token)
@@ -45,6 +44,7 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):
         "email": user[1],  # user[1] is email
         "user_id": user[0],
         "user_type": user[3],  # user[3] == user type
+        "token": token,
     }
     response = JSONResponse(content=content)
     response.set_cookie(
@@ -62,7 +62,6 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):
 
 @router.post("/ChangePassword")
 async def change_password_route(form: ChangePasswordForm):
-    print("change password route")
     if (
         form.new_password != form.confirm_new_password
         or form.new_password == ""
@@ -88,8 +87,6 @@ async def change_password_route(form: ChangePasswordForm):
 
 @router.get("/GetAllUsers")
 async def get_all_users():
-    pass
-    print("get all users")
     with engine.begin() as connection:
         results = connection.execute(
             text("SELECT user_id,email,user_type FROM login_user;")

@@ -1,7 +1,7 @@
 import json  # noqa: I001
 from typing import Annotated
 import polars as pl
-from fastapi import APIRouter, File, HTTPException, UploadFile, BackgroundTasks
+from fastapi import APIRouter, File, HTTPException, UploadFile, BackgroundTasks, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy import literal_column, bindparam
 from sqlalchemy.exc import IntegrityError
@@ -17,6 +17,7 @@ from src.db.db_wrapper import (
     localities_params_dict_sorting_of_names_and_ids,
     text,
 )
+from src.auth.jwthandler import route_auth_by_token
 from ..constants import (
     get_header_dict,
     legacy_and_miscellaneous_items_report_sql_string_columns,
@@ -40,6 +41,7 @@ async def get_catalogue(
     filter_str: str,
     sort_by: str,
     descending: bool,
+    current_user: str = Depends(route_auth_by_token),
 ):
     filter_str = "%" + filter_str + "%" if filter_str != "" else ""
 
@@ -863,8 +865,10 @@ async def _upsert_into_db(file: File):
 async def upload_files(
     files: Annotated[list[UploadFile], File()],
     user_id: int,
-    background_tasks: BackgroundTasks,
+    token: str,
+    background_tasks: BackgroundTasks = None,
 ):
+    Depends(route_auth_by_token(token))
     results = []
     for file in files:
         print("pre check", file.filename)
@@ -874,13 +878,19 @@ async def upload_files(
 
 
 @router.post("/DeleteSelectedRows")
-async def delete_selected_rows(model_instance: DeleteSelectedRowsModel):
+async def delete_selected_rows(
+    model_instance: DeleteSelectedRowsModel,
+):
+
+    Depends(route_auth_by_token(model_instance.token))
+
     with engine.begin() as connection:
         connection.execute(
             text(
                 f"""
         DELETE FROM {literal_column(model_instance.catalogue_name)}_raw 
-        WHERE {literal_column(model_instance.current_primary_key)} IN :ids_to_be_deleted
+        WHERE {literal_column(model_instance.current_primary_key)} 
+        IN :ids_to_be_deleted
         """,
             )
             .bindparams(
@@ -914,6 +924,7 @@ async def delete_all_catalogue_data():
 async def download_files(
     conditions: DownloadFilesModel,
 ):
+    Depends(route_auth_by_token(token=conditions.token))
     if conditions.selected_catalogues == []:
         raise HTTPException(422, "Missing selected catalogue names.")
     for catalogue_name in conditions.selected_catalogues:
@@ -1489,6 +1500,6 @@ def old_transformation_for_oral_history(
 
 
 @router.get("/DownloadTemplatesForTheCatalogs")
-def download_templates_for_the_catalogs():
+def download_templates_for_the_catalogs(token: str = Depends(route_auth_by_token)):
     file_path = "./templates for the catalogs.zip"
     return FileResponse(file_path, media_type="application/zip")

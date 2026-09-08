@@ -2,8 +2,9 @@ import re
 from enum import Enum
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import AfterValidator, BaseModel, EmailStr
+from src.auth.jwthandler import route_auth_by_token
 from src.constants import passwordError, passwordRegex
 
 router = APIRouter()
@@ -54,9 +55,11 @@ class DownloadFilesModel(BaseModel):
     # date_range: list[str]
     search_terms: dict
     selected_catalogues: list[str]
+    token: str
 
 
 class DeleteSelectedRowsModel(BaseModel):
     ids_to_be_deleted: list[str]
     catalogue_name: str
     current_primary_key: str
+    token: str
