@@ -44,7 +44,7 @@ async def get_catalogue(
     current_user: str = Depends(route_auth_by_token),
 ):
     filter_str = "%" + filter_str + "%" if filter_str != "" else ""
-
+    print("get catalogue")
     with engine.begin() as connection:
         row_counts = connection.execute(
             text(f"""
@@ -78,6 +78,7 @@ async def get_catalogue(
             + order_by_sql_condition
             + " LIMIT :fetch_count OFFSET :start_row;"
         )
+        print(sql)
         params = {
             "sort_by": sort_by,
             "fetch_count": fetchCount,
@@ -93,6 +94,7 @@ async def get_catalogue(
                 [params],
             ).all()
         ]
+        print(results)
         return {"results": results, "row_counts": row_counts}
 
 
@@ -114,13 +116,7 @@ async def _upsert_into_db(file: File):
         )
 
     df = df.with_columns(pl.all().cast(pl.String, strict=True)).with_columns(
-        pl.when(pl.all().str.starts_with("'") & pl.all().str.ends_with("'"))
-        .then(pl.all().str.slice(1, pl.all().str.len_chars() - 2))
-        .otherwise(pl.all())
-        .str.replace_all("__SEMICOLON__", ";")
-        .str.replace_all("__COMMA__", ",")
-        .str.replace_all("__SINGLEQUOTE__", "'")
-        .str.replace_all("__NEW_LINE__", "\n")
+        # pl.all().str.replace_all('"', "'", literal=True)
     )
     if df.shape[0] <= 1:
         raise HTTPException(
@@ -145,14 +141,8 @@ async def _upsert_into_db(file: File):
     ### Individual Catalogue processing
     if cols == print_sql_string_columns:
         # Raw Insertion
-        df_raw = df.clone().with_columns(
-            # df["remarks"]
-            # .str.replace('"', '"', literal=True)
-            # .str.replace(";", r"\;", literal=True),
-            # df["photograph_information"]
-            # .str.replace('"', '"', literal=True)
-            # .str.replace(";", r"\;", literal=True),
-        )
+        df_raw = df.clone()
+        print(df_raw)
 
         with engine.begin() as connection:
             connection.execute(

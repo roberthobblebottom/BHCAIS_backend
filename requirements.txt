@@ -2,3 +2,5 @@ bcrypt==4.3.0
 python-dotenv
 fastapi
 setuptools<82
+polars
+
