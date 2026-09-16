@@ -3,7 +3,7 @@
 Connection to the 127.0.0.1 for user postgres created successfully.
 database name: ('postgres',)
 current database user: ('postgres',)
-connection <sqlalchemy.engine.base.Connection object at 0x768eff9f8440>
+connection <sqlalchemy.engine.base.Connection object at 0x712fcacfc440>
  
  🐍 Using import string: main:app (auto-discovered, use --verbose to learn more)
  
@@ -17,17 +17,32 @@ connection <sqlalchemy.engine.base.Connection object at 0x768eff9f8440>
  
   Logs:
  
-INFO:     Started server process [13679]
+INFO:     Started server process [17166]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     42.61.245.182:59052 - "GET /Login HTTP/1.1" 404 Not Found
+INFO:     42.61.245.182:55092 - "GET /BulkDataUpload HTTP/1.1" 404 Not Found
 WARNING:  Invalid HTTP request received.
-INFO:     42.61.245.182:59052 - "GET /Login HTTP/1.1" 404 Not Found
+INFO:     42.61.245.182:55092 - "GET /BulkDataUpload HTTP/1.1" 404 Not Found
 WARNING:  Invalid HTTP request received.
-INFO:     42.61.245.182:59052 - "GET / HTTP/1.1" 200 OK
-INFO:     42.61.245.182:59052 - "GET /assets/index-r9YgKmf2.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:59078 - "GET /assets/index-Dpb9kI2G.css HTTP/1.1" 200 OK
-INFO:     42.61.245.182:59078 - "GET /assets/images/01-0101.jpg HTTP/1.1" 404 Not Found
-1
-INFO:     42.61.245.182:46966 - "POST /api/Login HTTP/1.1" 401 Unauthorized
+INFO:     42.61.245.182:55092 - "GET / HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55092 - "GET /assets/index-mDwTsrsO.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55118 - "GET /assets/%40vue-5zdQowx1.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55134 - "GET /assets/vue-router-BpLWkb0O.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55144 - "GET /assets/pinia-BVLWtEqN.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55160 - "GET /assets/quasar-CtyOTd5N.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55162 - "GET /assets/vee-validate-C9CQTJpm.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55144 - "GET /assets/rolldown-runtime-CbXtAM7H.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55134 - "GET /assets/property-expr-Bth8LF0w.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55118 - "GET /assets/toposort-Bz-Jyi0a.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55162 - "GET /assets/tiny-case-DH_cQVUw.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55134 - "GET /assets/yup-B2IG1go2.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55144 - "GET /assets/client-zip-DW_QXD5M.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55118 - "GET /assets/base64-js-CYL4mSfK.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55144 - "GET /assets/pinia-plugin-persistedstate-D2-FZC-p.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55162 - "GET /assets/buffer-BPbCGyI6.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55134 - "GET /assets/quasar-9t5oTgcM.css HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55160 - "GET /assets/index-CHzLqUu7.css HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55118 - "GET /assets/%40quasar-CfqJPC31.css HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55092 - "GET /assets/01-0101-DZhYbA1P.jpg HTTP/1.1" 200 OK
+INFO:     42.61.245.182:55134 - "GET /images/Group-1.svg HTTP/1.1" 200 OK
