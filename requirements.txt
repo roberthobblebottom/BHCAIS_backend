@@ -3,15 +3,7 @@ python-dotenv
 fastapi
 setuptools<82
 polars
-<<<<<<< HEAD
-
-
-sqlalchemy
-psycopg2-binary
-
-=======
 sqlalchemy
 psycopg2-binary
 passlib
 python-jose
->>>>>>> 6e080262c98f1a9055507ac4a303e5490b98f07c
