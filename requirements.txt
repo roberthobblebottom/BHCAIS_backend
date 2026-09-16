@@ -4,3 +4,7 @@ fastapi
 setuptools<82
 polars
 
+
+sqlalchemy
+psycopg2-binary
+

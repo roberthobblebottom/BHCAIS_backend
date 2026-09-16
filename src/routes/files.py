@@ -4,7 +4,6 @@ import polars as pl
 from fastapi import APIRouter, File, HTTPException, UploadFile, BackgroundTasks, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy import literal_column, bindparam
-from sqlalchemy.exc import IntegrityError
 from src.db.db_wrapper import (
     # df_params_sorting_of_names_and_id_in_list_fields,
     # df_params_sorting_of_names_and_ids,
