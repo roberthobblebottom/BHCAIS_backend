@@ -1,48 +1,571 @@
 
  ⚡️ Starting FastAPI in production mode
 Connection to the 127.0.0.1 for user postgres created successfully.
-database name: ('postgres',)
-current database user: ('postgres',)
-connection <sqlalchemy.engine.base.Connection object at 0x712fcacfc440>
- 
- 🐍 Using import string: main:app (auto-discovered, use --verbose to learn more)
- 
- 💡 You can configure an entrypoint in pyproject.toml for this app with:
- 
-    [tool.fastapi]
-    entrypoint = "main:app"
- 
- 🌐 Server started at http://0.0.0.0:8000
-    Documentation at http://0.0.0.0:8000/docs
- 
-  Logs:
- 
-INFO:     Started server process [17166]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     42.61.245.182:55092 - "GET /BulkDataUpload HTTP/1.1" 404 Not Found
-WARNING:  Invalid HTTP request received.
-INFO:     42.61.245.182:55092 - "GET /BulkDataUpload HTTP/1.1" 404 Not Found
-WARNING:  Invalid HTTP request received.
-INFO:     42.61.245.182:55092 - "GET / HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55092 - "GET /assets/index-mDwTsrsO.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55118 - "GET /assets/%40vue-5zdQowx1.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55134 - "GET /assets/vue-router-BpLWkb0O.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55144 - "GET /assets/pinia-BVLWtEqN.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55160 - "GET /assets/quasar-CtyOTd5N.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55162 - "GET /assets/vee-validate-C9CQTJpm.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55144 - "GET /assets/rolldown-runtime-CbXtAM7H.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55134 - "GET /assets/property-expr-Bth8LF0w.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55118 - "GET /assets/toposort-Bz-Jyi0a.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55162 - "GET /assets/tiny-case-DH_cQVUw.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55134 - "GET /assets/yup-B2IG1go2.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55144 - "GET /assets/client-zip-DW_QXD5M.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55118 - "GET /assets/base64-js-CYL4mSfK.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55144 - "GET /assets/pinia-plugin-persistedstate-D2-FZC-p.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55162 - "GET /assets/buffer-BPbCGyI6.js HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55134 - "GET /assets/quasar-9t5oTgcM.css HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55160 - "GET /assets/index-CHzLqUu7.css HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55118 - "GET /assets/%40quasar-CfqJPC31.css HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55092 - "GET /assets/01-0101-DZhYbA1P.jpg HTTP/1.1" 200 OK
-INFO:     42.61.245.182:55134 - "GET /images/Group-1.svg HTTP/1.1" 200 OK
+
+╭───────────────────── Traceback (most recent call last) ──────────────────────╮
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/ba │
+│ se.py:144 in __init__                                                        │
+│                                                                              │
+│    141 │   │                                                                 │
+│    142 │   │   if connection is None:                                        │
+│    143 │   │   │   try:                                                      │
+│ ❱  144 │   │   │   │   self._dbapi_connection = engine.raw_connection()      │
+│    145 │   │   │   except dialect.loaded_dbapi.Error as err:                 │
+│    146 │   │   │   │   Connection._handle_dbapi_exception_noconnection(      │
+│    147 │   │   │   │   │   err, dialect, engine                              │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/ba │
+│ se.py:3319 in raw_connection                                                 │
+│                                                                              │
+│   3316 │   │   │   :ref:`dbapi_connections`                                  │
+│   3317 │   │                                                                 │
+│   3318 │   │   """                                                           │
+│ ❱ 3319 │   │   return self.pool.connect()                                    │
+│   3320                                                                       │
+│   3321                                                                       │
+│   3322 class OptionEngineMixin(log.Identified):                              │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:448 in connect                                                           │
+│                                                                              │
+│    445 │   │   the pool.                                                     │
+│    446 │   │                                                                 │
+│    447 │   │   """                                                           │
+│ ❱  448 │   │   return _ConnectionFairy._checkout(self)                       │
+│    449 │                                                                     │
+│    450 │   def _return_conn(self, record: ConnectionPoolEntry) -> None:      │
+│    451 │   │   """Given a _ConnectionRecord, return it to the                │
+│        :class:`_pool.Pool`.                                                  │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:1272 in _checkout                                                        │
+│                                                                              │
+│   1269 │   │   fairy: Optional[_ConnectionFairy] = None,                     │
+│   1270 │   ) -> _ConnectionFairy:                                            │
+│   1271 │   │   if not fairy:                                                 │
+│ ❱ 1272 │   │   │   fairy = _ConnectionRecord.checkout(pool)                  │
+│   1273 │   │   │                                                             │
+│   1274 │   │   │   if threadconns is not None:                               │
+│   1275 │   │   │   │   threadconns.current = weakref.ref(fairy)              │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:712 in checkout                                                          │
+│                                                                              │
+│    709 │   │   if TYPE_CHECKING:                                             │
+│    710 │   │   │   rec = cast(_ConnectionRecord, pool._do_get())             │
+│    711 │   │   else:                                                         │
+│ ❱  712 │   │   │   rec = pool._do_get()                                      │
+│    713 │   │                                                                 │
+│    714 │   │   try:                                                          │
+│    715 │   │   │   dbapi_connection = rec.get_connection()                   │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/impl │
+│ .py:178 in _do_get                                                           │
+│                                                                              │
+│   175 │   │   │   try:                                                       │
+│   176 │   │   │   │   return self._create_connection()                       │
+│   177 │   │   │   except:                                                    │
+│ ❱ 178 │   │   │   │   with util.safe_reraise():                              │
+│   179 │   │   │   │   │   self._dec_overflow()                               │
+│   180 │   │   │   │   raise                                                  │
+│   181 │   │   else:                                                          │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/util/lang │
+│ helpers.py:122 in __exit__                                                   │
+│                                                                              │
+│    119 │   │   │   exc_type, exc_value, exc_tb = self._exc_info              │
+│    120 │   │   │   assert exc_value is not None                              │
+│    121 │   │   │   self._exc_info = None  # remove potential circular        │
+│        references                                                            │
+│ ❱  122 │   │   │   raise exc_value.with_traceback(exc_tb)                    │
+│    123 │   │   else:                                                         │
+│    124 │   │   │   self._exc_info = None  # remove potential circular        │
+│        references                                                            │
+│    125 │   │   │   assert value is not None                                  │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/impl │
+│ .py:176 in _do_get                                                           │
+│                                                                              │
+│   173 │   │                                                                  │
+│   174 │   │   if self._inc_overflow():                                       │
+│   175 │   │   │   try:                                                       │
+│ ❱ 176 │   │   │   │   return self._create_connection()                       │
+│   177 │   │   │   except:                                                    │
+│   178 │   │   │   │   with util.safe_reraise():                              │
+│   179 │   │   │   │   │   self._dec_overflow()                               │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:389 in _create_connection                                                │
+│                                                                              │
+│    386 │   def _create_connection(self) -> ConnectionPoolEntry:              │
+│    387 │   │   """Called by subclasses to create a new ConnectionRecord."""  │
+│    388 │   │                                                                 │
+│ ❱  389 │   │   return _ConnectionRecord(self)                                │
+│    390 │                                                                     │
+│    391 │   def _invalidate(                                                  │
+│    392 │   │   self,                                                         │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:674 in __init__                                                          │
+│                                                                              │
+│    671 │   │                                                                 │
+│    672 │   │   self.__pool = pool                                            │
+│    673 │   │   if connect:                                                   │
+│ ❱  674 │   │   │   self.__connect()                                          │
+│    675 │   │   self.finalize_callback = deque()                              │
+│    676 │                                                                     │
+│    677 │   dbapi_connection: Optional[DBAPIConnection]                       │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:900 in __connect                                                         │
+│                                                                              │
+│    897 │   │   │   pool.logger.debug("Created new connection %r",            │
+│        connection)                                                           │
+│    898 │   │   │   self.fresh = True                                         │
+│    899 │   │   except BaseException as e:                                    │
+│ ❱  900 │   │   │   with util.safe_reraise():                                 │
+│    901 │   │   │   │   pool.logger.debug("Error on connect(): %s", e)        │
+│    902 │   │   else:                                                         │
+│    903 │   │   │   # in SQLAlchemy 1.4 the first_connect event is not used   │
+│        by                                                                    │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/util/lang │
+│ helpers.py:122 in __exit__                                                   │
+│                                                                              │
+│    119 │   │   │   exc_type, exc_value, exc_tb = self._exc_info              │
+│    120 │   │   │   assert exc_value is not None                              │
+│    121 │   │   │   self._exc_info = None  # remove potential circular        │
+│        references                                                            │
+│ ❱  122 │   │   │   raise exc_value.with_traceback(exc_tb)                    │
+│    123 │   │   else:                                                         │
+│    124 │   │   │   self._exc_info = None  # remove potential circular        │
+│        references                                                            │
+│    125 │   │   │   assert value is not None                                  │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:896 in __connect                                                         │
+│                                                                              │
+│    893 │   │   self.dbapi_connection = None                                  │
+│    894 │   │   try:                                                          │
+│    895 │   │   │   self.starttime = time.time()                              │
+│ ❱  896 │   │   │   self.dbapi_connection = connection =                      │
+│        pool._invoke_creator(self)                                            │
+│    897 │   │   │   pool.logger.debug("Created new connection %r",            │
+│        connection)                                                           │
+│    898 │   │   │   self.fresh = True                                         │
+│    899 │   │   except BaseException as e:                                    │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/cr │
+│ eate.py:667 in connect                                                       │
+│                                                                              │
+│   664 │   │   │   │   │   │   return connection                              │
+│   665 │   │   │   │   return dialect.connect(*mutable_cargs,                 │
+│       **mutable_cparams)                                                     │
+│   666 │   │   │   else:                                                      │
+│ ❱ 667 │   │   │   │   return dialect.connect(*cargs_tup, **cparams)          │
+│   668 │   │                                                                  │
+│   669 │   │   creator = pop_kwarg("creator", connect)                        │
+│   670                                                                        │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/de │
+│ fault.py:630 in connect                                                      │
+│                                                                              │
+│    627 │                                                                     │
+│    628 │   def connect(self, *cargs: Any, **cparams: Any) ->                 │
+│        DBAPIConnection:                                                      │
+│    629 │   │   # inherits the docstring from interfaces.Dialect.connect      │
+│ ❱  630 │   │   return self.loaded_dbapi.connect(*cargs, **cparams)  # type:  │
+│        ignore[no-any-return]  # NOQA: E501                                   │
+│    631 │                                                                     │
+│    632 │   def create_connect_args(self, url: URL) -> ConnectArgsType:       │
+│    633 │   │   # inherits the docstring from                                 │
+│        interfaces.Dialect.create_connect_args                                │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/psycopg2/__init__.py │
+│ :122 in connect                                                              │
+│                                                                              │
+│   119 │   │   kwasync['async_'] = kwargs.pop('async_')                       │
+│   120 │                                                                      │
+│   121 │   dsn = _ext.make_dsn(dsn, **kwargs)                                 │
+│ ❱ 122 │   conn = _connect(dsn, connection_factory=connection_factory,        │
+│       **kwasync)                                                             │
+│   123 │   if cursor_factory is not None:                                     │
+│   124 │   │   conn.cursor_factory = cursor_factory                           │
+│   125                                                                        │
+╰──────────────────────────────────────────────────────────────────────────────╯
+OperationalError: connection to server at "127.0.0.1", port 5432 failed: FATAL: 
+password authentication failed for user "postgres"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password 
+authentication failed for user "postgres"
+
+
+The above exception was the direct cause of the following exception:
+
+╭───────────────────── Traceback (most recent call last) ──────────────────────╮
+│ /root/BHCAIS_backend/src/db/db_wrapper.py:19 in <module>                     │
+│                                                                              │
+│    16 │   │   f"Connection to the {os.environ.get('host')} for user          │
+│       {os.environ.get('user')} created successfully."                        │
+│    17 │   )                                                                  │
+│    18 │                                                                      │
+│ ❱  19 │   with engine.begin() as connection:                                 │
+│    20 │   │   connection.execute(text("SET search_path TO public"))          │
+│    21 │   │                                                                  │
+│    22 │   │   results = connection.execute(text("SELECT                      │
+│       current_database();")).one()                                           │
+│                                                                              │
+│ /root/.local/share/uv/python/cpython-3.13.15-linux-x86_64-gnu/lib/python3.13 │
+│ /contextlib.py:141 in __enter__                                              │
+│                                                                              │
+│   138 │   │   # they are only needed for recreation, which is not possible   │
+│       anymore                                                                │
+│   139 │   │   del self.args, self.kwds, self.func                            │
+│   140 │   │   try:                                                           │
+│ ❱ 141 │   │   │   return next(self.gen)                                      │
+│   142 │   │   except StopIteration:                                          │
+│   143 │   │   │   raise RuntimeError("generator didn't yield") from None     │
+│   144                                                                        │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/ba │
+│ se.py:3259 in begin                                                          │
+│                                                                              │
+│   3256 │   │   │   for a particular :class:`_engine.Connection`.             │
+│   3257 │   │                                                                 │
+│   3258 │   │   """  # noqa: E501                                             │
+│ ❱ 3259 │   │   with self.connect() as conn:                                  │
+│   3260 │   │   │   with conn.begin():                                        │
+│   3261 │   │   │   │   yield conn                                            │
+│   3262                                                                       │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/ba │
+│ se.py:3295 in connect                                                        │
+│                                                                              │
+│   3292 │   │                                                                 │
+│   3293 │   │   """                                                           │
+│   3294 │   │                                                                 │
+│ ❱ 3295 │   │   return self._connection_cls(self)                             │
+│   3296 │                                                                     │
+│   3297 │   def raw_connection(self) -> PoolProxiedConnection:                │
+│   3298 │   │   """Return a "raw" DBAPI connection from the connection pool.  │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/ba │
+│ se.py:146 in __init__                                                        │
+│                                                                              │
+│    143 │   │   │   try:                                                      │
+│    144 │   │   │   │   self._dbapi_connection = engine.raw_connection()      │
+│    145 │   │   │   except dialect.loaded_dbapi.Error as err:                 │
+│ ❱  146 │   │   │   │   Connection._handle_dbapi_exception_noconnection(      │
+│    147 │   │   │   │   │   err, dialect, engine                              │
+│    148 │   │   │   │   )                                                     │
+│    149 │   │   │   │   raise                                                 │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/ba │
+│ se.py:2450 in _handle_dbapi_exception_noconnection                           │
+│                                                                              │
+│   2447 │   │   │   raise newraise.with_traceback(exc_info[2]) from e         │
+│   2448 │   │   elif should_wrap:                                             │
+│   2449 │   │   │   assert sqlalchemy_exception is not None                   │
+│ ❱ 2450 │   │   │   raise sqlalchemy_exception.with_traceback(exc_info[2])    │
+│        from e                                                                │
+│   2451 │   │   else:                                                         │
+│   2452 │   │   │   assert exc_info[1] is not None                            │
+│   2453 │   │   │   raise exc_info[1].with_traceback(exc_info[2])             │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/ba │
+│ se.py:144 in __init__                                                        │
+│                                                                              │
+│    141 │   │                                                                 │
+│    142 │   │   if connection is None:                                        │
+│    143 │   │   │   try:                                                      │
+│ ❱  144 │   │   │   │   self._dbapi_connection = engine.raw_connection()      │
+│    145 │   │   │   except dialect.loaded_dbapi.Error as err:                 │
+│    146 │   │   │   │   Connection._handle_dbapi_exception_noconnection(      │
+│    147 │   │   │   │   │   err, dialect, engine                              │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/ba │
+│ se.py:3319 in raw_connection                                                 │
+│                                                                              │
+│   3316 │   │   │   :ref:`dbapi_connections`                                  │
+│   3317 │   │                                                                 │
+│   3318 │   │   """                                                           │
+│ ❱ 3319 │   │   return self.pool.connect()                                    │
+│   3320                                                                       │
+│   3321                                                                       │
+│   3322 class OptionEngineMixin(log.Identified):                              │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:448 in connect                                                           │
+│                                                                              │
+│    445 │   │   the pool.                                                     │
+│    446 │   │                                                                 │
+│    447 │   │   """                                                           │
+│ ❱  448 │   │   return _ConnectionFairy._checkout(self)                       │
+│    449 │                                                                     │
+│    450 │   def _return_conn(self, record: ConnectionPoolEntry) -> None:      │
+│    451 │   │   """Given a _ConnectionRecord, return it to the                │
+│        :class:`_pool.Pool`.                                                  │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:1272 in _checkout                                                        │
+│                                                                              │
+│   1269 │   │   fairy: Optional[_ConnectionFairy] = None,                     │
+│   1270 │   ) -> _ConnectionFairy:                                            │
+│   1271 │   │   if not fairy:                                                 │
+│ ❱ 1272 │   │   │   fairy = _ConnectionRecord.checkout(pool)                  │
+│   1273 │   │   │                                                             │
+│   1274 │   │   │   if threadconns is not None:                               │
+│   1275 │   │   │   │   threadconns.current = weakref.ref(fairy)              │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:712 in checkout                                                          │
+│                                                                              │
+│    709 │   │   if TYPE_CHECKING:                                             │
+│    710 │   │   │   rec = cast(_ConnectionRecord, pool._do_get())             │
+│    711 │   │   else:                                                         │
+│ ❱  712 │   │   │   rec = pool._do_get()                                      │
+│    713 │   │                                                                 │
+│    714 │   │   try:                                                          │
+│    715 │   │   │   dbapi_connection = rec.get_connection()                   │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/impl │
+│ .py:178 in _do_get                                                           │
+│                                                                              │
+│   175 │   │   │   try:                                                       │
+│   176 │   │   │   │   return self._create_connection()                       │
+│   177 │   │   │   except:                                                    │
+│ ❱ 178 │   │   │   │   with util.safe_reraise():                              │
+│   179 │   │   │   │   │   self._dec_overflow()                               │
+│   180 │   │   │   │   raise                                                  │
+│   181 │   │   else:                                                          │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/util/lang │
+│ helpers.py:122 in __exit__                                                   │
+│                                                                              │
+│    119 │   │   │   exc_type, exc_value, exc_tb = self._exc_info              │
+│    120 │   │   │   assert exc_value is not None                              │
+│    121 │   │   │   self._exc_info = None  # remove potential circular        │
+│        references                                                            │
+│ ❱  122 │   │   │   raise exc_value.with_traceback(exc_tb)                    │
+│    123 │   │   else:                                                         │
+│    124 │   │   │   self._exc_info = None  # remove potential circular        │
+│        references                                                            │
+│    125 │   │   │   assert value is not None                                  │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/impl │
+│ .py:176 in _do_get                                                           │
+│                                                                              │
+│   173 │   │                                                                  │
+│   174 │   │   if self._inc_overflow():                                       │
+│   175 │   │   │   try:                                                       │
+│ ❱ 176 │   │   │   │   return self._create_connection()                       │
+│   177 │   │   │   except:                                                    │
+│   178 │   │   │   │   with util.safe_reraise():                              │
+│   179 │   │   │   │   │   self._dec_overflow()                               │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:389 in _create_connection                                                │
+│                                                                              │
+│    386 │   def _create_connection(self) -> ConnectionPoolEntry:              │
+│    387 │   │   """Called by subclasses to create a new ConnectionRecord."""  │
+│    388 │   │                                                                 │
+│ ❱  389 │   │   return _ConnectionRecord(self)                                │
+│    390 │                                                                     │
+│    391 │   def _invalidate(                                                  │
+│    392 │   │   self,                                                         │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:674 in __init__                                                          │
+│                                                                              │
+│    671 │   │                                                                 │
+│    672 │   │   self.__pool = pool                                            │
+│    673 │   │   if connect:                                                   │
+│ ❱  674 │   │   │   self.__connect()                                          │
+│    675 │   │   self.finalize_callback = deque()                              │
+│    676 │                                                                     │
+│    677 │   dbapi_connection: Optional[DBAPIConnection]                       │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:900 in __connect                                                         │
+│                                                                              │
+│    897 │   │   │   pool.logger.debug("Created new connection %r",            │
+│        connection)                                                           │
+│    898 │   │   │   self.fresh = True                                         │
+│    899 │   │   except BaseException as e:                                    │
+│ ❱  900 │   │   │   with util.safe_reraise():                                 │
+│    901 │   │   │   │   pool.logger.debug("Error on connect(): %s", e)        │
+│    902 │   │   else:                                                         │
+│    903 │   │   │   # in SQLAlchemy 1.4 the first_connect event is not used   │
+│        by                                                                    │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/util/lang │
+│ helpers.py:122 in __exit__                                                   │
+│                                                                              │
+│    119 │   │   │   exc_type, exc_value, exc_tb = self._exc_info              │
+│    120 │   │   │   assert exc_value is not None                              │
+│    121 │   │   │   self._exc_info = None  # remove potential circular        │
+│        references                                                            │
+│ ❱  122 │   │   │   raise exc_value.with_traceback(exc_tb)                    │
+│    123 │   │   else:                                                         │
+│    124 │   │   │   self._exc_info = None  # remove potential circular        │
+│        references                                                            │
+│    125 │   │   │   assert value is not None                                  │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/pool/base │
+│ .py:896 in __connect                                                         │
+│                                                                              │
+│    893 │   │   self.dbapi_connection = None                                  │
+│    894 │   │   try:                                                          │
+│    895 │   │   │   self.starttime = time.time()                              │
+│ ❱  896 │   │   │   self.dbapi_connection = connection =                      │
+│        pool._invoke_creator(self)                                            │
+│    897 │   │   │   pool.logger.debug("Created new connection %r",            │
+│        connection)                                                           │
+│    898 │   │   │   self.fresh = True                                         │
+│    899 │   │   except BaseException as e:                                    │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/cr │
+│ eate.py:667 in connect                                                       │
+│                                                                              │
+│   664 │   │   │   │   │   │   return connection                              │
+│   665 │   │   │   │   return dialect.connect(*mutable_cargs,                 │
+│       **mutable_cparams)                                                     │
+│   666 │   │   │   else:                                                      │
+│ ❱ 667 │   │   │   │   return dialect.connect(*cargs_tup, **cparams)          │
+│   668 │   │                                                                  │
+│   669 │   │   creator = pop_kwarg("creator", connect)                        │
+│   670                                                                        │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/sqlalchemy/engine/de │
+│ fault.py:630 in connect                                                      │
+│                                                                              │
+│    627 │                                                                     │
+│    628 │   def connect(self, *cargs: Any, **cparams: Any) ->                 │
+│        DBAPIConnection:                                                      │
+│    629 │   │   # inherits the docstring from interfaces.Dialect.connect      │
+│ ❱  630 │   │   return self.loaded_dbapi.connect(*cargs, **cparams)  # type:  │
+│        ignore[no-any-return]  # NOQA: E501                                   │
+│    631 │                                                                     │
+│    632 │   def create_connect_args(self, url: URL) -> ConnectArgsType:       │
+│    633 │   │   # inherits the docstring from                                 │
+│        interfaces.Dialect.create_connect_args                                │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/psycopg2/__init__.py │
+│ :122 in connect                                                              │
+│                                                                              │
+│   119 │   │   kwasync['async_'] = kwargs.pop('async_')                       │
+│   120 │                                                                      │
+│   121 │   dsn = _ext.make_dsn(dsn, **kwargs)                                 │
+│ ❱ 122 │   conn = _connect(dsn, connection_factory=connection_factory,        │
+│       **kwasync)                                                             │
+│   123 │   if cursor_factory is not None:                                     │
+│   124 │   │   conn.cursor_factory = cursor_factory                           │
+│   125                                                                        │
+╰──────────────────────────────────────────────────────────────────────────────╯
+OperationalError: (psycopg2.OperationalError) connection to server at 
+"127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user 
+"postgres"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password 
+authentication failed for user "postgres"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+During handling of the above exception, another exception occurred:
+
+╭───────────────────── Traceback (most recent call last) ──────────────────────╮
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/fastapi_cli/cli.py:5 │
+│ 21 in run                                                                    │
+│                                                                              │
+│   518 │                                                                      │
+│   519 │   Otherwise, it uses the first [bold]FastAPI[/bold] app found in the │
+│       imported module or package.                                            │
+│   520 │   """                                                                │
+│ ❱ 521 │   _run(                                                              │
+│   522 │   │   path=path,                                                     │
+│   523 │   │   host=host,                                                     │
+│   524 │   │   port=port,                                                     │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/fastapi_cli/cli.py:1 │
+│ 88 in _run                                                                   │
+│                                                                              │
+│   185 │   │   │   │   │   config.entrypoint, config.from_pyproject           │
+│   186 │   │   │   │   )                                                      │
+│   187 │   │   │   else:                                                      │
+│ ❱ 188 │   │   │   │   import_data = get_import_data()                        │
+│   189 │   │   except FastAPICLIException as e:                               │
+│   190 │   │   │   toolkit.print_line()                                       │
+│   191 │   │   │   toolkit.print(f"[error]{e}")                               │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/fastapi_cli/discover │
+│ .py:143 in get_import_data                                                   │
+│                                                                              │
+│   140 │   │   raise FastAPICLIException(f"Path does not exist {path}")       │
+│   141 │   mod_data = get_module_data_from_path(path)                         │
+│   142 │   sys.path.insert(0, str(mod_data.extra_sys_path))                   │
+│ ❱ 143 │   use_app_name = get_app_name(mod_data=mod_data, app_name=app_name)  │
+│   144 │                                                                      │
+│   145 │   import_string = f"{mod_data.module_import_str}:{use_app_name}"     │
+│   146                                                                        │
+│                                                                              │
+│ /root/BHCAIS_backend/.venv/lib/python3.13/site-packages/fastapi_cli/discover │
+│ .py:70 in get_app_name                                                       │
+│                                                                              │
+│    67                                                                        │
+│    68 def get_app_name(*, mod_data: ModuleData, app_name: str | None = None) │
+│       -> str:                                                                │
+│    69 │   try:                                                               │
+│ ❱  70 │   │   mod = importlib.import_module(mod_data.module_import_str)      │
+│    71 │   except (ImportError, ValueError) as e:                             │
+│    72 │   │   logger.error(f"Import error: {e}")                             │
+│    73 │   │   logger.warning(                                                │
+│                                                                              │
+│ /root/.local/share/uv/python/cpython-3.13.15-linux-x86_64-gnu/lib/python3.13 │
+│ /importlib/__init__.py:88 in import_module                                   │
+│                                                                              │
+│    85 │   │   │   if character != '.':                                       │
+│    86 │   │   │   │   break                                                  │
+│    87 │   │   │   level += 1                                                 │
+│ ❱  88 │   return _bootstrap._gcd_import(name[level:], package, level)        │
+│    89                                                                        │
+│    90                                                                        │
+│    91 _RELOADING = {}                                                        │
+│ in _gcd_import:1395                                                          │
+│ in _find_and_load:1360                                                       │
+│ in _find_and_load_unlocked:1331                                              │
+│ in _load_unlocked:935                                                        │
+│ in exec_module:1023                                                          │
+│ in _call_with_frames_removed:488                                             │
+│                                                                              │
+│ /root/BHCAIS_backend/main.py:6 in <module>                                   │
+│                                                                              │
+│    3 from fastapi import FastAPI                                             │
+│    4 from fastapi.middleware.cors import CORSMiddleware                      │
+│    5 from fastapi.staticfiles import StaticFiles                             │
+│ ❱  6 from src.routes import files, users                                     │
+│    7                                                                         │
+│    8 app = FastAPI()                                                         │
+│    9 # is required to make cross-origin requests                             │
+│                                                                              │
+│ /root/BHCAIS_backend/src/routes/files.py:7 in <module>                       │
+│                                                                              │
+│      4 from fastapi import APIRouter, File, HTTPException, UploadFile,       │
+│        BackgroundTasks, Depends                                              │
+│      5 from fastapi.responses import StreamingResponse                       │
+│      6 from sqlalchemy import literal_column, bindparam                      │
+│ ❱    7 from src.db.db_wrapper import (                                       │
+│      8 │   # df_params_sorting_of_names_and_id_in_list_fields,               │
+│      9 │   # df_params_sorting_of_names_and_ids,                             │
+│     10 │   engine,                                                           │
+│                                                                              │
+│ /root/BHCAIS_backend/src/db/db_wrapper.py:29 in <module>                     │
+│                                                                              │
+│    26 │   │   print("connection", connection)                                │
+│    27                                                                        │
+│    28 except Exception as ex:  # noqa: BLE001                                │
+│ ❱  29 │   print("Connection could not be made due to the following           │
+│       error:\n", ex["details"])                                              │
+│    30                                                                        │
+│    31                                                                        │
+│    32 # def insert_into_person_if_not_exist_in_name_held(names, user_id,     │
+│       connection):                                                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+TypeError: 'OperationalError' object is not subscriptable
