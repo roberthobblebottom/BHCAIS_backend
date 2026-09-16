@@ -2,10 +2,10 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from src.routes import files, users
 
 app = FastAPI()
-
 # is required to make cross-origin requests
 # -- i.e., requests that originate from a different protocol, IP address, domain name, or port.
 # This is necessary since the vue frontend will run at http://localhost:8080.
@@ -20,6 +20,8 @@ app.add_middleware(
 app.include_router(users.router, prefix=os.environ["prefix"])
 app.include_router(files.router, prefix=os.environ["prefix"])
 
+
+app.mount("/",StaticFiles(directory="/root/BHCAIS_frontend/dist",html=True),name="static")
 
 @app.get("/")
 def front_page():

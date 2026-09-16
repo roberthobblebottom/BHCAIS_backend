@@ -1,0 +1,33 @@
+
+ ⚡️ Starting FastAPI in production mode
+Connection to the 127.0.0.1 for user postgres created successfully.
+database name: ('postgres',)
+current database user: ('postgres',)
+connection <sqlalchemy.engine.base.Connection object at 0x768eff9f8440>
+ 
+ 🐍 Using import string: main:app (auto-discovered, use --verbose to learn more)
+ 
+ 💡 You can configure an entrypoint in pyproject.toml for this app with:
+ 
+    [tool.fastapi]
+    entrypoint = "main:app"
+ 
+ 🌐 Server started at http://0.0.0.0:8000
+    Documentation at http://0.0.0.0:8000/docs
+ 
+  Logs:
+ 
+INFO:     Started server process [13679]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     42.61.245.182:59052 - "GET /Login HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     42.61.245.182:59052 - "GET /Login HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     42.61.245.182:59052 - "GET / HTTP/1.1" 200 OK
+INFO:     42.61.245.182:59052 - "GET /assets/index-r9YgKmf2.js HTTP/1.1" 200 OK
+INFO:     42.61.245.182:59078 - "GET /assets/index-Dpb9kI2G.css HTTP/1.1" 200 OK
+INFO:     42.61.245.182:59078 - "GET /assets/images/01-0101.jpg HTTP/1.1" 404 Not Found
+1
+INFO:     42.61.245.182:46966 - "POST /api/Login HTTP/1.1" 401 Unauthorized
