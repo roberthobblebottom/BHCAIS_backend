@@ -21,14 +21,16 @@ app.add_middleware(
 
 app.include_router(users.router, prefix=os.getenv("prefix"))
 app.include_router(files.router, prefix=os.getenv("prefix"))
+
+
+@app.get("/")
+def front_page():
+    return {"msg": "fastapi backend online"}
+
+
 if os.getenv("is_production") == "true":
     app.mount(
         "/",
         StaticFiles(directory="/root/BHCAIS_frontend/dist", html=True),
         name="static",
     )
-
-
-@app.get("/")
-def front_page():
-    return {"msg": "fastapi backend online"}
