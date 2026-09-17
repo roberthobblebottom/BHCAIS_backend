@@ -22,8 +22,8 @@ app.include_router(users.router, prefix=os.getenv("prefix"))
 app.include_router(files.router, prefix=os.getenv("prefix"))
 
 
-@app.get("/")
-def front_page():
+@app.get("/api/status")
+def apoi_status():
     return {"msg": "fastapi backend online"}
 
 
