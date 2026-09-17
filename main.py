@@ -26,11 +26,12 @@ app.include_router(files.router, prefix=os.getenv("prefix"))
 @app.get("/")
 def front_page():
     return {"msg": "fastapi backend online"}
+print(f"is_production env: '{os.getenv('is_production')}'")
+print(f"Type: {type(os.getenv('is_production'))}")
+print(f"Comparison result: {os.getenv('is_production') == 'true'}")
 
-
-if os.getenv("is_production") == "true":
-    app.mount(
+if os.getenv("is_production","false").lower() == "true":
+    app.frontend(
         "/",
-        StaticFiles(directory="/root/BHCAIS_frontend/dist", html=True),
-        name="static",
+    directory="/root/BHCAIS_frontend/dist",
     )
