@@ -107,7 +107,11 @@ async def create_user(form: CreateUserForm):
     print(form)
     Depends(admin_route_auth_by_token(form.token))
     print("1")
-    if form.password != form.confirm_password:
+    if (
+        form.password != form.confirm_password
+        and form.password != ""
+        and form.confirm_password != ""
+    ):
         raise HTTPException(
             422, "Password and confirm_passwords doesn't equate to each other"
         )
@@ -138,12 +142,12 @@ async def edit_user(form: EditUserForm):
     if (
         form.password != form.confirm_password
         and form.password != ""
-        and form.confirm_new_password != ""
+        and form.confirm_password != ""
     ):
         raise HTTPException(
             422, "Password and confirm_passwords doesn't equate to each other"
         )
-    if form.password != "" and form.confirm_new_password != "":
+    if form.password != "" and form.confirm_password != "":
         passwordValidation(form.password)
         passwordValidation(form.confirm_password)
 
