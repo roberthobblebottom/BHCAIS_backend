@@ -104,9 +104,7 @@ async def get_all_users():
 
 @router.post("/CreateUser")
 async def create_user(form: CreateUserForm):
-    print(form)
     Depends(admin_route_auth_by_token(form.token))
-    print("1")
     if (
         form.password != form.confirm_password
         and form.password != ""
@@ -115,6 +113,8 @@ async def create_user(form: CreateUserForm):
         raise HTTPException(
             422, "Password and confirm_passwords doesn't equate to each other"
         )
+    passwordValidation(form.password)
+    passwordValidation(form.confirm_password)
     with engine.begin() as connection:
         try:
             connection.execute(
@@ -150,7 +150,6 @@ async def edit_user(form: EditUserForm):
     if form.password != "" and form.confirm_password != "":
         passwordValidation(form.password)
         passwordValidation(form.confirm_password)
-
     with engine.begin() as connection:
         try:
             connection.execute(
@@ -167,6 +166,25 @@ async def edit_user(form: EditUserForm):
                     }
                 ],
             )
+
+            if form.password != "":
+                p = get_password_hash(form.password)
+                print("...")
+                print(p)
+                print(form)
+                connection.execute(
+                    text("""UPDATE login_user 
+                        SET 
+                        salted_password=:salted_password
+                        WHERE login_user.user_id = :user_id
+                    """),
+                    [
+                        {
+                            "salted_password": p,
+                            "user_id": form.user_id,
+                        }
+                    ],
+                )
         except IntegrityError:
             raise HTTPException(422, "Email already in the database.")
     # with engine.begin() as connection:
