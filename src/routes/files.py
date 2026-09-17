@@ -857,7 +857,7 @@ async def upload_files(
     token: str,
     background_tasks: BackgroundTasks = None,
 ):
-    Depends(route_auth_by_token(token))
+    route_auth_by_token(token)
     results = []
     for file in files:
         print("pre check", file.filename)
