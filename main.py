@@ -7,6 +7,7 @@ from src.routes import files, users
 
 load_dotenv()
 app = FastAPI()
+
 # is required to make cross-origin requests
 # -- i.e., requests that originate from a different protocol, IP address, domain name, or port.
 # This is necessary since the vue frontend will run at http://localhost:8080.

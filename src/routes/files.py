@@ -4,18 +4,7 @@ import polars as pl
 from fastapi import APIRouter, File, HTTPException, UploadFile, BackgroundTasks, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy import literal_column, bindparam
-from src.db.db_wrapper import (
-    # df_params_sorting_of_names_and_id_in_list_fields,
-    # df_params_sorting_of_names_and_ids,
-    engine,
-    # find_if_locality_name_exists_in_db,
-    # get_all_people_from_person_table,
-    # get_unique_localities,
-    # insert_into_locality,
-    # insert_into_person_if_not_exist_in_name_held,
-    # localities_params_dict_sorting_of_names_and_ids,
-    text,
-)
+from src.db.db_wrapper import engine, text
 from src.auth.jwthandler import route_auth_by_token, admin_route_auth_by_token
 from ..constants import (
     get_header_dict,
@@ -43,7 +32,6 @@ async def get_catalogue(
     current_user: str = Depends(route_auth_by_token),
 ):
     filter_str = "%" + filter_str + "%" if filter_str != "" else ""
-    print("get catalogue")
     with engine.begin() as connection:
         row_counts = connection.execute(
             text(f"""
@@ -77,7 +65,6 @@ async def get_catalogue(
             + order_by_sql_condition
             + " LIMIT :fetch_count OFFSET :start_row;"
         )
-        print(sql)
         params = {
             "sort_by": sort_by,
             "fetch_count": fetchCount,
@@ -93,7 +80,6 @@ async def get_catalogue(
                 [params],
             ).all()
         ]
-        print(results)
         return {"results": results, "row_counts": row_counts}
 
 
@@ -134,14 +120,12 @@ async def _upsert_into_db(file: File):
         and cols != library_and_archives_sql_string_columns
         and cols != legacy_and_miscellaneous_items_report_sql_string_columns
     ):
-        print(file.name + " have incorrect or missing headers")
         return
 
     ### Individual Catalogue processing
     if cols == print_sql_string_columns:
         # Raw Insertion
         df_raw = df.clone()
-        print(df_raw)
 
         with engine.begin() as connection:
             connection.execute(

@@ -21,8 +21,8 @@ class OAuth2PasswordBearerCookie(OAuth2):
     def __init__(
         self,
         token_url: str,
-        scheme_name: str = None,
-        scopes: dict = None,
+        scheme_name: str | None = None,
+        scopes: dict | None = None,
         auto_error: bool = True,
     ):
         if not scopes:
@@ -98,7 +98,6 @@ def admin_route_auth_by_token(token: str = Depends(oauth2_scheme)):
         user_type: str = payload.get("user_type")
         if email is None or user_type is None:
             raise credentials_exception
-
         if not does_admin_exist_in_db(email, user_type):
             raise credentials_exception
     except JWTError:

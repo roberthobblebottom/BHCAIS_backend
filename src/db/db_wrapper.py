@@ -11,11 +11,9 @@ try:
     engine = create_engine(
         f"postgresql+psycopg2://{os.environ.get('user')}:{os.environ.get('password')}@{os.environ.get('host')}:{os.environ.get('port')}/{os.environ.get('database')}"
     )
-
     print(
         f"Connection to the {os.environ.get('host')} for user {os.environ.get('user')} created successfully."
     )
-
     with engine.begin() as connection:
         connection.execute(text("SET search_path TO public"))
 
@@ -23,10 +21,26 @@ try:
         print("database name:", results)
         results = connection.execute(text("SELECT current_user;")).one()
         print("current database user:", results)
-        print("connection", connection)
 
 except Exception as ex:  # noqa: BLE001
     print("Connection could not be made due to the following error:\n", ex["details"])
+
+
+def does_user_exist_in_db(email: str):
+    with engine.begin() as connection:
+        return connection.execute(
+            text("SELECT 1 FROM login_user WHERE  email=:email"), [{"email": email}]
+        ).first()
+
+
+def does_admin_exist_in_db(email: str, user_type: str):
+    with engine.begin() as connection:
+        return connection.execute(
+            text(
+                "SELECT 1 FROM login_user WHERE  email=:email AND user_type=:user_type"
+            ),
+            [{"email": email, "user_type": user_type}],
+        ).first()
 
 
 # def insert_into_person_if_not_exist_in_name_held(names, user_id, connection):
@@ -154,20 +168,3 @@ except Exception as ex:  # noqa: BLE001
 #         text(sql),
 #         [{"locality_name": locality}],
 #     ).first()
-
-
-def does_user_exist_in_db(email: str):
-    with engine.begin() as connection:
-        return connection.execute(
-            text("SELECT 1 FROM login_user WHERE  email=:email"), [{"email": email}]
-        ).first()
-
-
-def does_admin_exist_in_db(email: str, user_type: str):
-    with engine.begin() as connection:
-        return connection.execute(
-            text(
-                "SELECT 1 FROM login_user WHERE  email=:email AND user_type=:user_type"
-            ),
-            [{"email": email, "user_type": user_type}],
-        ).first()

@@ -98,7 +98,6 @@ async def get_all_users():
         results = connection.execute(
             text("SELECT user_id,email,user_type FROM login_user;")
         ).all()
-        print("results", {"results": [x._asdict() for x in results]})
         return {"results": [x._asdict() for x in results]}
 
 
@@ -169,9 +168,6 @@ async def edit_user(form: EditUserForm):
 
             if form.password != "":
                 p = get_password_hash(form.password)
-                print("...")
-                print(p)
-                print(form)
                 connection.execute(
                     text("""UPDATE login_user 
                         SET 
@@ -191,7 +187,6 @@ async def edit_user(form: EditUserForm):
     #     results = connection.execute(
     #         text("SELECT user_id,email,user_type FROM login_user;")
     #     ).all()
-    #     print("results", {"results": [x._asdict() for x in results]})
     return {"ok": True, "message": "successfully Edit a user"}
 
 

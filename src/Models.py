@@ -2,9 +2,8 @@ import re
 from enum import Enum
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import AfterValidator, BaseModel, EmailStr
-from src.auth.jwthandler import route_auth_by_token
 from src.constants import passwordError, passwordRegex
 
 router = APIRouter()

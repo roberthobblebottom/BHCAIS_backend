@@ -263,6 +263,7 @@ print_sql_string_columns = [
     "checked_by",
     "object_condition_qc2",
 ]
+
 oral_histories_sql_string_columns = [
     "sn",
     "name_of_interviewee",
@@ -449,7 +450,6 @@ legacy_and_miscellaneous_items_report_sql_string_columns = [
     "nas_link",
 ]
 
-
 get_header_dict = {
     "print": print_sql_string_columns,
     "oral_history": oral_histories_sql_string_columns,
@@ -458,10 +458,13 @@ get_header_dict = {
     "library_and_archive": library_and_archives_sql_string_columns,
     "legacy_and_miscellaneous_items_report": legacy_and_miscellaneous_items_report_sql_string_columns,
 }
+
 passwordRegex = r"^(?=.*[a-z])(?=.*[0-9])\S{7,}$"
+
 passwordError = (
     "Passwords must at least have 7 charactors, one lower case and one upper case"
 )
+
 catalogue_names = [
     "print",
     "oral_history",
@@ -470,5 +473,3 @@ catalogue_names = [
     "library_and_archive",
     "legacy_and_miscellaneous_items_report",
 ]
-if __name__ == "__main__":
-    print()

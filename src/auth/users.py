@@ -7,7 +7,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def verify_password(plain_password, hashed_password):
-    # pwd_context.
     return pwd_context.verify(plain_password, hashed_password.tobytes())
 
 
@@ -21,8 +20,8 @@ async def _get_user(
     with engine.begin() as connection:
         result = connection.execute(
             text("""SELECT user_id, email,salted_password, user_type 
-        FROM login_user 
-        WHERE email = :username;"""),
+                    FROM login_user 
+                    WHERE email = :username;"""),
             [{"username": username}],
         )
     result = result.all()
@@ -32,25 +31,19 @@ async def _get_user(
     return result[0]  # first result
 
 
-async def validate_user(user: OAuth2PasswordRequestForm = Depends()):
+async def validate_user(user: OAuth2PasswordRequestForm = Depends()):  # noqa: B008
     try:
         db_user = await _get_user(user.username)
     except Exception as exc:
-        print("1")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         ) from exc
-    # print("user password", user.password)
-    # print("db_user [2] salted password from db", db_user[2])
-    # print("a new password hash", get_password_hash(user.password))
     if not verify_password(user.password, db_user[2]):  # salted_password from db
-        print("2")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
-
     return db_user
 
 
