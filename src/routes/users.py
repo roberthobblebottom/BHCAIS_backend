@@ -5,7 +5,12 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import (
+    IntegrityError,
+    NoSuchColumnError,
+    NoSuchTableError,
+    ResourceClosedError,
+)
 from src.auth.jwthandler import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     admin_route_auth_by_token,
@@ -90,16 +95,21 @@ async def change_password_route(form: ChangePasswordForm):
         if exc.status_code == 401:
             raise HTTPException(422, "Incorrect username or password.") from exc
         raise HTTPException(422, "password form is mulformed in some way")
+    except (NoSuchTableError, NoSuchColumnError, ResourceClosedError) as e:
+        raise HTTPException(500, e)
     return {"ok": True, "message": "sucessfully changed the password"}
 
 
 @router.get("/GetAllUsers")
 async def get_all_users():
-    with engine.begin() as connection:
-        results = connection.execute(
-            text("SELECT user_id,email,user_type FROM login_user;")
-        ).all()
-        return {"results": [x._asdict() for x in results]}
+    try:
+        with engine.begin() as connection:
+            results = connection.execute(
+                text("SELECT user_id,email,user_type FROM login_user;")
+            ).all()
+            return {"results": [x._asdict() for x in results]}
+    except (NoSuchTableError, NoSuchColumnError, ResourceClosedError) as e:
+        raise HTTPException(500, e)
 
 
 @router.post("/CreateUser")
@@ -132,6 +142,8 @@ async def create_user(form: CreateUserForm):
             )
         except IntegrityError:
             raise HTTPException(422, "Email already in the database.")
+        except (NoSuchTableError, NoSuchColumnError, ResourceClosedError) as e:
+            raise HTTPException(500, e)
 
     return {"ok": True, "message": "successfully created a user"}
 
@@ -184,14 +196,12 @@ async def edit_user(form: EditUserForm):
                 )
         except IntegrityError:
             raise HTTPException(422, "Email already in the database.")
-    # with engine.begin() as connection:
-    #     results = connection.execute(
-    #         text("SELECT user_id,email,user_type FROM login_user;")
-    #     ).all()
+        except (NoSuchTableError, NoSuchColumnError, ResourceClosedError) as e:
+            raise HTTPException(500, e)
     return {"ok": True, "message": "successfully Edit a user"}
 
 
-@router.delete("/DeleteUser")
+@router.post("/DeleteUser")
 async def delete_user(form: DeleteUserForm):
     Depends(admin_route_auth_by_token(form.token))
     user_id = form.user_id
@@ -207,5 +217,5 @@ async def delete_user(form: DeleteUserForm):
             """),
                 [{"user_id": user_id}],
             )
-        except Exception as exc:
-            raise HTTPException(442, exc)
+        except (NoSuchTableError, NoSuchColumnError, ResourceClosedError) as e:
+            raise HTTPException(500, e)
