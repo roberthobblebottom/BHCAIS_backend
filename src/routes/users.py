@@ -201,7 +201,7 @@ async def edit_user(form: EditUserForm):
     return {"ok": True, "message": "successfully Edit a user"}
 
 
-@router.post("/DeleteUser")
+@router.delete("/DeleteUser")
 async def delete_user(form: DeleteUserForm):
     Depends(admin_route_auth_by_token(form.token))
     user_id = form.user_id
