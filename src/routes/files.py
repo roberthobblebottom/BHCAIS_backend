@@ -850,7 +850,7 @@ async def upload_files(
     return {"uploaded_files": results}
 
 
-@router.post("/DeleteSelectedRows")
+@router.delete("/DeleteSelectedRows")
 async def delete_selected_rows(
     model_instance: DeleteSelectedRowsModel,
 ):
@@ -878,7 +878,7 @@ async def delete_selected_rows(
     return {"ok": True, "message": "deleted selected rows"}
 
 
-@router.post("/DeleteAllCatalogueData")
+@router.delete("/DeleteAllCatalogueData")
 async def delete_all_catalogue_data(token: str):
     Depends(admin_route_auth_by_token(token))
     with engine.begin() as connection:
