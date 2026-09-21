@@ -53,12 +53,13 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):
         "token": token,
     }
     response = JSONResponse(content=content)
+    time = 1800 * 100  # 50 Hours
     response.set_cookie(
         "Authorization",
         value=f"Bearer {token}",
         httponly=True,
-        max_age=1800,
-        expires=1800,
+        max_age=time,
+        expires=time,
         samesite="Lax",
         secure=False,
     )
