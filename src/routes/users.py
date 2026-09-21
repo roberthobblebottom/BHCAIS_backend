@@ -67,7 +67,7 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):
     return response
 
 
-@router.post("/ChangePassword")
+@router.put("/ChangePassword")
 async def change_password_route(form: ChangePasswordForm):
     Depends(route_auth_by_token(form.token))
     if (
@@ -136,7 +136,7 @@ async def create_user(form: CreateUserForm):
     return {"ok": True, "message": "successfully created a user"}
 
 
-@router.post("/EditUser")
+@router.put("/EditUser")
 async def edit_user(form: EditUserForm):
     Depends(admin_route_auth_by_token(form.token))
     if (
@@ -191,7 +191,7 @@ async def edit_user(form: EditUserForm):
     return {"ok": True, "message": "successfully Edit a user"}
 
 
-@router.post("/DeleteUser")
+@router.delete("/DeleteUser")
 async def delete_user(form: DeleteUserForm):
     Depends(admin_route_auth_by_token(form.token))
     user_id = form.user_id
