@@ -50,7 +50,8 @@ async def get_catalogue(
                     f" {keyword} {literal_column(x)} ILIKE :filter_str{i}"
                 )
         order_by_sql_condition = (
-            f"ORDER BY {literal_column(sort_by)}"
+            f"""ORDER BY {literal_column(sort_by)}
+            """
             if sort_by not in ["desc", "null", ""]
             else ""
         )
