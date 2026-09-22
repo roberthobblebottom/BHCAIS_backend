@@ -51,7 +51,7 @@ async def get_catalogue(
                 )
         order_by_sql_condition = (
             f"ORDER BY {literal_column(sort_by)}"
-            if sort_by not in ["desc", "null"]
+            if sort_by not in ["desc", "null", ""]
             else ""
         )
         order_by_sql_condition = (
