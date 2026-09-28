@@ -46,5 +46,9 @@ jobs:
         host: '127.0.0.1'
         port: '5432'
         database: 'postgres'
+        allowed_origin : "http://localhost:5173"
+        prefix : ""
+        is_production : false 
+        JWT_SECRET_KEY:'sdfdsfdsf'
       run: |
         uv run pytest ./src/tests/files_test.py
