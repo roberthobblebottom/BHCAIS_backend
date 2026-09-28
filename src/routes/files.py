@@ -45,7 +45,9 @@ async def get_catalogue(
         where_sql_condition = ""
         if filter_str != "":
             for i, x in enumerate(get_header_dict[catalogue_name]):
-                keyword = "WHERE" if i == 0 else "OR"
+                if i == 0:
+                    continue
+                keyword = "WHERE" if i == 1 else "OR"
                 where_sql_condition += (
                     f" {keyword} {literal_column(x)} ILIKE :filter_str{i}"
                 )

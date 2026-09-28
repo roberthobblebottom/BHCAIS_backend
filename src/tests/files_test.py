@@ -7,11 +7,13 @@ client = TestClient(app)
 
 
 def test_files():
+    print("Testing these modules: upload files, get catalogue and download report")
     user = client.post(
         "/Login", data={"username": "normaluser@mail.com", "password": "1"}
     ).json()
     # print("token:", token)
     assert len(user["token"]) != 0
+    print('assert len(user["token"]) != 0 is true')
     headers = {"Authorization": f"Bearer {user['token']}"}
 
     with open(
@@ -28,12 +30,12 @@ def test_files():
             headers=headers,
         )
         assert response.status_code == 200
-    print("response of file upload", response)
+    print("assert response of file upload", response)
     response = client.get(
         "/GetCatalogue",
         params={
             "catalogue_name": "print",
-            "filter_str": "",
+            "filter_str": "place",
             "sort_by": "",
             "descending": False,
             "rows_per_page": 10,
@@ -43,5 +45,20 @@ def test_files():
         headers=headers,  # required or else it will say "not authenticated"
     )
     results = json.loads(response.text)["results"]
-    print("total length of results from GetCatalogue", len(results))
-    assert response.status_code == 200
+    assert response.status_code == 200 and len(results) > 1
+    print(
+        "assert status code  = 200 and total length of results from GetCatalogue is more than 1."
+    )
+    response = client.post(
+        "/DownloadFiles",
+        headers=headers,
+        json={
+            "search_terms": {"print": {"main_category": "place"}},
+            "selected_catalogues": ["print"],
+            "token": user["token"],
+        },
+    )  # must be json not data as the arguement
+    results = json.loads("[" + response.text[response.text.find("{") : -1] + "]")
+    unique_cat = {r["main_category"] for r in results if r["main_category"] == "Place"}
+    assert len(unique_cat) == 1 and next(iter(unique_cat)) == "Place"
+    print("assert the only unique main cat", unique_cat)
