@@ -39,6 +39,7 @@ jobs:
           USERNAME: ${{ secrets.SSH_USERNAME }}
           DEPLOY_PATH: ${{ secrets.APP_DIR}}
         run: |
+          echo ${HOST}
           ssh "${USERNAME}@${HOST}" << 'EOF'
           cd "$DEPLOY_PATH"
           # git fetch origin
