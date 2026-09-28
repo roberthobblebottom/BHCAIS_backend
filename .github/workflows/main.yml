@@ -36,12 +36,7 @@ jobs:
           EOF
           chmod 600 ~/.ssh/config
       
-      - name: Deploy to Production
-        env:
-          HOST: ${{ secrets.SSH_HOST }}
-          USERNAME: ${{ secrets.SSH_USERNAME }}
-          DEPLOY_PATH: ${{ secrets.APP_DIR}}
-        run: |
+
           ssh "${USERNAME}@${HOST}" << 'EOF'
           cd ~/BHCAIS_backend 
           git pull origin main
