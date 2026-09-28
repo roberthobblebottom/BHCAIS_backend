@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Setup SSH
+      - name: Setup SSH, ssh, pull
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           HOST: ${{ secrets.SSH_HOST }}
@@ -38,4 +38,5 @@ jobs:
           cd ~/BHCAIS_backend 
           # Uses Deploy Key as I have set up before using commands like for id_ed25519 private key
           git pull origin main
+          bash run.sh
           EOF
