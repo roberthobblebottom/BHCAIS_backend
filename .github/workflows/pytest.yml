@@ -29,7 +29,9 @@ jobs:
         sudo apt install -y postgresql postgresql-contrib
         sudo systemctl start postgresql.service
         sudo -u postgres psql < ./db_scripts/reset.sql
-        sudo -u postgres psql < "ALTER USER postgres PASSWORD 'admin';"
+        sudo -u postgres psql << "EOF" 
+        ALTER USER postgres PASSWORD 'admin';
+        EOF
         python -m pip install --upgrade pip
         pip install uv
         uv venv
@@ -40,7 +42,7 @@ jobs:
     - name: Test with pytest
       env:
         user: 'postgres'
-        password: 'admin'
+        password: 'postgres'
         host: '127.0.0.1'
         port: '5432'
         database: 'postgres'
