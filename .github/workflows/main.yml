@@ -16,12 +16,15 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           HOST: ${{ secrets.SSH_HOST }}
           USERNAME: ${{ secrets.SSH_USERNAME }}
+          GIT_DEPLOY_KEY: ${{ secrets.GIT_DEPLOY_KEY }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          echo "$GIT_DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/deploy_key
           
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
           
@@ -41,7 +44,6 @@ jobs:
         run: |
           ssh "${USERNAME}@${HOST}" << 'EOF'
           cd ~/BHCAIS_backend 
-          git remote set-url origin git@github.com:roberthobblebottom/BHCAIS_backend.git
           git pull origin main
           # Add your deployment commands here
           # npm install && npm run build
