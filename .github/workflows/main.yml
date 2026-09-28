@@ -32,13 +32,9 @@ jobs:
             StrictHostKeyChecking accept-new
             UserKnownHostsFile ~/.ssh/known_hosts
           EOF
-          chmod 600 ~/.ssh/config
       
 
           ssh "${USERNAME}@${HOST}" << 'EOF'
           cd ~/BHCAIS_backend 
           git pull origin main
-          # Add your deployment commands here
-          # npm install && npm run build
-          # systemctl restart your-app
           EOF
