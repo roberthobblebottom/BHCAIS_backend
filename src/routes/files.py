@@ -29,7 +29,7 @@ async def get_catalogue(
     filter_str: str,
     sort_by: str,
     descending: bool,
-    current_user: str = Depends(route_auth_by_token),
+    token: str = Depends(route_auth_by_token),
 ):
     filter_str = "%" + filter_str + "%" if filter_str != "" else ""
     with engine.begin() as connection:

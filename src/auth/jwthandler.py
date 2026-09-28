@@ -77,8 +77,10 @@ def route_auth_by_token(token: str = Depends(oauth2_scheme)):
         if email is None:
             raise credentials_exception
         if not does_user_exist_in_db(email):
+            print("5")
             raise credentials_exception
     except JWTError:
+        print("6")
         raise credentials_exception
 
     print("auth success")
