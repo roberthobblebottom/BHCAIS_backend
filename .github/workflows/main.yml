@@ -18,6 +18,6 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_url: ${{secrets.HOST}}
-          branch: ${{ github.ref }}
+          branch: main 
           ssh: true
         
