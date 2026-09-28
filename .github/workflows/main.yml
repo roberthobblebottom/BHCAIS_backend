@@ -22,9 +22,7 @@ jobs:
           chmod 700 ~/.ssh
           
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-          echo "$GIT_DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/deploy_key
           
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
           
