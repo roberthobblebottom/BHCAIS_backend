@@ -16,7 +16,7 @@ jobs:
         run: |
               eval "ssh-agent" 
               mkdir -p ~/.ssh 
-              echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-              chmod 600 ~/.ssh/id_rsa
+              echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+              chmod 600 ~/.ssh/id_ed25519
               ssh-keyscan -H "${{secrets.SSH_HOST}}" >> ~/.ssh/known_hosts
               ssh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "echo "INSIDE THE SERVER VIA SSH" && cd ${{ secrets.APP_DIR }} && GIT_SSH_COMMAND='ssh -i ~/.ssh/github_action_git_pull_key -o IdentitiesOnly=yes' git pull https://github.com/roberthobblebottom/BHCAIS_backend.git"
