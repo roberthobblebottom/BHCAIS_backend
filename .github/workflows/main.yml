@@ -19,4 +19,4 @@ jobs:
               echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
               chmod 600 ~/.ssh/id_ed25519
               ssh-keyscan -H "${{secrets.SSH_HOST}}" >> ~/.ssh/known_hosts
-              ssh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "bash ~/git_pull.sh" 
+              ssh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} bash ~/git_pull.sh 
