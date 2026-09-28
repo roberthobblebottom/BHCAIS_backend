@@ -41,8 +41,7 @@ jobs:
         run: |
           ssh "${USERNAME}@${HOST}" << 'EOF'
           cd ~/BHCAIS_backend 
-          # git fetch origin
-          # git checkout main
+          git remote set-url origin git@github.com:roberthobblebottom/BHCAIS_backend.git
           git pull origin main
           # Add your deployment commands here
           # npm install && npm run build
