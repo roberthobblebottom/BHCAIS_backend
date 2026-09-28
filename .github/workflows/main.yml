@@ -1,23 +1,26 @@
-name: Deploy
+yaml
+
+name: Push to Server
+
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
-  # NOT WORKINGd 
-  deploy:
-
+  push:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_url: ${{secrets.HOST}}
-          branch: main 
-          ssh: true
-        
+      - uses: actions/checkout@v3
+      
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H your-server.com >> ~/.ssh/known_hosts 2>/dev/null
+      
+      - name: Push to Server
+        run: |
+          git remote add server ssh://${{secrets.USERNAME}}@${{secrets.HOST}}/root/BHCAIS_backend.git
+          git push server main
