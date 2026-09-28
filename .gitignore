@@ -18,3 +18,4 @@ db_scripts/
 
 *.log
 .pytest_cache/
+deploy_*
