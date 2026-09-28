@@ -14,7 +14,6 @@ wheels/
 .git/
 .gitignore
 .env
-db_scripts/
 
 *.log
 .pytest_cache/

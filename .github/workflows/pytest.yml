@@ -25,12 +25,16 @@ jobs:
         python-version: "3.12"
     - name: Install dependencies
       run: |
+        sudo apt update
+        sudo apt install -y postgresql postgresql-contrib
+        sudo systemctl start postgresql.service
+        sudo -u postgres psql < db_scripts/reset.db
         python -m pip install --upgrade pip
         pip install uv
         uv venv
         source .venv/bin/activate
         uv pip install flake8 pytest
-        if [ -f requirements.txt ]; then uv pip install -r requirements.txt; fi
+        uv pip install -r requirements.txt
 
     - name: Test with pytest
       run: |
