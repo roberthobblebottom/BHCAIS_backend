@@ -39,7 +39,7 @@ jobs:
         uv pip install flake8 pytest
         uv pip install -r requirements.txt
 
-    - name: Test with pytest
+    - name: test catalogue data integration
       env:
         user: 'postgres'
         password: 'admin'
