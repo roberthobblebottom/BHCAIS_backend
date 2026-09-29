@@ -1,11 +1,11 @@
 import re
 from enum import Enum
-
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import AfterValidator, BaseModel, EmailStr, Field
-from src.constants import passwordError, passwordRegex, catalogue_names
+
+from src.constants import catalogue_names, passwordError, passwordRegex
 
 router = APIRouter()
 
@@ -13,9 +13,12 @@ router = APIRouter()
 # Users
 def passwordValidation(password: str) -> str:
     isValid = re.match(passwordRegex, password)
-
+    with open("common-passwords.txt", "r") as common_passwords:
+        isValid = isValid and password not in common_passwords.readall().split("\n")
     if not isValid:
-        raise HTTPException(422, passwordError)
+        raise HTTPException(
+            422, passwordError + " Or the password is a common password."
+        )
     return password
 
 
@@ -53,8 +56,8 @@ class CreateUserForm(BaseModel):
 class EditUserForm(BaseModel):
     user_id: int = Field(primary_key=True)
     email: EmailStr
-    password: str
-    confirm_password: str
+    password: Annotated[str, AfterValidator(passwordValidation)]
+    confirm_password: Annotated[str, AfterValidator(passwordValidation)]
     user_type: UserTypeEnum
     token: str
 
@@ -69,14 +72,13 @@ class GetCatalogueModel(BaseModel):
     catalogue_name: Literal[*catalogue_names]
     rows_per_page: int = Field(ge=0)
     current_page_number: int = Field(ge=0)
-    filter_str: str
+    filter_str: str = Field(min_length=2)
     sort_by: str
     descending: bool
     token: str
 
 
 class DownloadFilesModel(BaseModel):
-    # date_range: list[str]
     search_terms: dict
     selected_catalogues: list[Literal[*catalogue_names]]
     token: str
