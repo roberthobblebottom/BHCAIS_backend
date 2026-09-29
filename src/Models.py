@@ -1,5 +1,6 @@
 import re
 from enum import Enum
+from pathlib import Path
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException
@@ -11,10 +12,12 @@ router = APIRouter()
 
 
 # Users
-def passwordValidation(password: str) -> str:
+def password_validation(password: str) -> str:
     isValid = re.match(passwordRegex, password)
-    with open("common-passwords.txt", "r") as common_passwords:
-        isValid = isValid and password not in common_passwords.readall().split("\n")
+    base_path = Path(__file__).parent
+    file_path = (base_path / "common-passwords.txt").resolve()
+    with open(file_path, "r") as common_passwords:
+        isValid = isValid and password not in common_passwords.read().split("\n")
     if not isValid:
         raise HTTPException(
             422, passwordError + " Or the password is a common password."
@@ -40,30 +43,30 @@ class UserTypeEnum(str, Enum):
 class ChangePasswordForm(BaseModel):
     username: EmailStr
     old_password: str
-    new_password: Annotated[str, AfterValidator(passwordValidation)]
-    confirm_new_password: Annotated[str, AfterValidator(passwordValidation)]
+    new_password: Annotated[str, AfterValidator(password_validation)]
+    confirm_new_password: Annotated[str, AfterValidator(password_validation)]
     token: str
 
 
 class CreateUserForm(BaseModel):
     email: EmailStr
-    password: Annotated[str, AfterValidator(passwordValidation)]
-    confirm_password: Annotated[str, AfterValidator(passwordValidation)]
+    password: Annotated[str, AfterValidator(password_validation)]
+    confirm_password: Annotated[str, AfterValidator(password_validation)]
     user_type: UserTypeEnum
     token: str
 
 
 class EditUserForm(BaseModel):
-    user_id: int = Field(primary_key=True)
+    user_id: int = Field(json_schema_extra=True)
     email: EmailStr
-    password: Annotated[str, AfterValidator(passwordValidation)]
-    confirm_password: Annotated[str, AfterValidator(passwordValidation)]
+    password: Annotated[str, AfterValidator(password_validation)]
+    confirm_password: Annotated[str, AfterValidator(password_validation)]
     user_type: UserTypeEnum
     token: str
 
 
 class DeleteUserForm(BaseModel):
-    user_id: int = Field(primary_key=True)
+    user_id: int = Field(json_schema_extra=True)
     token: str
 
 
@@ -85,7 +88,7 @@ class DownloadFilesModel(BaseModel):
 
 
 class DeleteSelectedRowsModel(BaseModel):
-    ids_to_be_deleted: list[int, Field(primary_key=True)]
+    ids_to_be_deleted: list[int, Field(json_schema_extra=True)]
     catalogue_name: list[Literal[*catalogue_names]]
     current_primary_key: str
     token: str

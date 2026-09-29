@@ -28,7 +28,7 @@ from src.Models import (
     CreateUserForm,
     DeleteUserForm,
     EditUserForm,
-    passwordValidation,
+    password_validation,
 )
 
 router = APIRouter()
@@ -123,8 +123,8 @@ async def create_user(form: CreateUserForm):
         raise HTTPException(
             422, "Password and confirm_passwords doesn't equate to each other"
         )
-    passwordValidation(form.password)
-    passwordValidation(form.confirm_password)
+    password_validation(form.password)
+    password_validation(form.confirm_password)
     with engine.begin() as connection:
         try:
             connection.execute(
@@ -160,8 +160,8 @@ async def edit_user(form: EditUserForm):
             422, "Password and confirm_passwords doesn't equate to each other"
         )
     if form.password != "" and form.confirm_password != "":
-        passwordValidation(form.password)
-        passwordValidation(form.confirm_password)
+        password_validation(form.password)
+        password_validation(form.confirm_password)
     with engine.begin() as connection:
         try:
             connection.execute(
