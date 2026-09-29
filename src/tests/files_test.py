@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 from main import app
@@ -16,8 +17,16 @@ def test_files():
     print('assert len(user["token"]) != 0 is true')
     headers = {"Authorization": f"Bearer {user['token']}"}
 
+    base_path = Path(
+        __file__
+    ).parent.parent.parent  # 3 times to go back two directories
+    file_path = (
+        base_path
+        / "sample_data_for_testing/LKCNHM Print Catalog_100 value sample _JT.xlsx"
+    ).resolve()
     with open(
-        "/home/ryan/Documents/lkcnhm/BHCAIS/sample data/LKCNHM Print Catalog_100 value sample _JT.xlsx",
+        # "../../sample_data_for_testing/LKCNHM Print Catalog_100 value sample _JT.xlsx",
+        file_path,
         "rb",
     ) as print_file:
         response = client.post(
