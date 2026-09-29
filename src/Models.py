@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException
-from pydantic import AfterValidator, BaseModel, EmailStr
+from pydantic import AfterValidator, BaseModel, EmailStr, Field
 from src.constants import passwordError, passwordRegex
 
 router = APIRouter()
@@ -18,17 +18,21 @@ def passwordValidation(password: str) -> str:
     return password
 
 
+class UserTypeEnum(str, Enum):
+    admin = "admin"
+    normal = "normal"
+
+
+class CatalogueEnum(str, Enum):
+    print = "print"
+
+
 class ChangePasswordForm(BaseModel):
     username: EmailStr
     old_password: str
     new_password: Annotated[str, AfterValidator(passwordValidation)]
     confirm_new_password: Annotated[str, AfterValidator(passwordValidation)]
     token: str
-
-
-class UserTypeEnum(str, Enum):
-    admin = "admin"
-    normal = "normal"
 
 
 class CreateUserForm(BaseModel):
@@ -40,7 +44,7 @@ class CreateUserForm(BaseModel):
 
 
 class EditUserForm(BaseModel):
-    user_id: int
+    user_id: int = Field(primary_key=True)
     email: EmailStr
     password: str
     confirm_password: str
@@ -49,11 +53,23 @@ class EditUserForm(BaseModel):
 
 
 class DeleteUserForm(BaseModel):
-    user_id: int
+    user_id: int = Field(primary_key=True)
     token: str
 
 
 # FILES
+
+
+class GetCatalogueModel(BaseModel):
+    catalogue_name: str
+    rows_per_page: int
+    current_page_number: int
+    filter_str: str
+    sort_by: str
+    descending: bool
+    token: str
+
+
 class DownloadFilesModel(BaseModel):
     # date_range: list[str]
     search_terms: dict
@@ -62,7 +78,7 @@ class DownloadFilesModel(BaseModel):
 
 
 class DeleteSelectedRowsModel(BaseModel):
-    ids_to_be_deleted: list[str]
+    ids_to_be_deleted: list[int, Field(primary_key=True)]
     catalogue_name: str
     current_primary_key: str
     token: str

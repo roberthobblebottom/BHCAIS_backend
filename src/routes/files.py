@@ -1,7 +1,15 @@
 import json  # noqa: I001
 from typing import Annotated
 import polars as pl
-from fastapi import APIRouter, File, HTTPException, UploadFile, BackgroundTasks, Depends
+from fastapi import (
+    APIRouter,
+    File,
+    HTTPException,
+    UploadFile,
+    BackgroundTasks,
+    Depends,
+    Query,
+)
 from fastapi.responses import StreamingResponse
 from sqlalchemy import literal_column, bindparam
 from src.db.db_wrapper import engine, text
@@ -16,35 +24,33 @@ from ..constants import (
     slides_sql_string_columns,
 )
 from fastapi.responses import FileResponse
-from src.Models import DeleteSelectedRowsModel, DownloadFilesModel
+from src.Models import DeleteSelectedRowsModel, DownloadFilesModel, GetCatalogueModel
 
 router = APIRouter()
 
 
 @router.get("/GetCatalogue", status_code=200)
-async def get_catalogue(
-    catalogue_name: str,
-    rows_per_page: int,
-    current_page_number: int,
-    filter_str: str,
-    sort_by: str,
-    descending: bool,
-    token: str = Depends(route_auth_by_token),
-):
-    filter_str = "%" + filter_str + "%" if filter_str != "" else ""
+async def get_catalogue(query: Annotated[GetCatalogueModel, Query()]):
+    Depends(route_auth_by_token(query.token))
+    if query.catalogue_name == "":
+        raise HTTPException(
+            422,
+            "catalogue name is empty string, it needs to be one of the catalogue name!",
+        )
+    filter_str = "%" + query.filter_str + "%" if query.filter_str != "" else ""
     with engine.begin() as connection:
         row_counts = connection.execute(
             text(f"""
-            SELECT COUNT(*) FROM {catalogue_name}_raw;
+            SELECT COUNT(*) FROM {query.catalogue_name}_raw;
         """)
         ).one()[0]
-        fetchCount = row_counts if rows_per_page == 0 else rows_per_page
+        fetchCount = row_counts if query.rows_per_page == 0 else query.rows_per_page
 
-        startRow = (current_page_number - 1) * rows_per_page
+        startRow = (query.current_page_number - 1) * query.rows_per_page
 
         where_sql_condition = ""
         if filter_str != "":
-            for i, x in enumerate(get_header_dict[catalogue_name]):
+            for i, x in enumerate(get_header_dict[query.catalogue_name]):
                 if i == 0:
                     continue
                 keyword = "WHERE" if i == 1 else "OR"
@@ -52,29 +58,29 @@ async def get_catalogue(
                     f" {keyword} {literal_column(x)} ILIKE :filter_str{i}"
                 )
         order_by_sql_condition = (
-            f"""ORDER BY {literal_column(sort_by)}
+            f""" ORDER BY {literal_column(query.sort_by)}
             """
-            if sort_by not in ["desc", "null", ""]
+            if query.sort_by not in ["desc", "null", ""]
             else ""
         )
         order_by_sql_condition = (
             order_by_sql_condition + " DESC"
-            if descending and order_by_sql_condition != ""
+            if query.descending and order_by_sql_condition != ""
             else ""
         )
         sql = (
-            f"SELECT * FROM {literal_column(catalogue_name)}_raw "
+            f"SELECT * FROM {literal_column(query.catalogue_name)}_raw "
             + where_sql_condition
             + order_by_sql_condition
             + " LIMIT :fetch_count OFFSET :start_row;"
         )
         params = {
-            "sort_by": sort_by,
+            "sort_by": query.sort_by,
             "fetch_count": fetchCount,
             "start_row": startRow,
         }
         if filter_str != "":
-            for x in range(len(get_header_dict[catalogue_name])):
+            for x in range(len(get_header_dict[query.catalogue_name])):
                 params[f"filter_str{x}"] = filter_str
         results = [
             row._asdict()
