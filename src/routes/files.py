@@ -897,7 +897,7 @@ async def delete_all_catalogue_data(token: str):
     return {"ok": True, "message": "deleted all catalogue data"}
 
 
-@router.post("/DownloadFiles", response_class=StreamingResponse)
+@router.post("/DownloadFiles")
 async def download_files(
     conditions: DownloadFilesModel,
 ):
@@ -926,12 +926,12 @@ async def download_files(
                 [params],
             ).all()
 
-            yield "catalogue_name=" + catalogue_name
+            yield {"catalogue_name": catalogue_name}
             if len(result) > 0:
                 for i, x in enumerate(result):
-                    yield json.dumps(x._asdict()) + ","
+                    yield x._asdict()
             else:
-                yield " no results"
+                yield {"message": "no results"}
 
 
 # def old_transformation_for_print(df, user_id):
