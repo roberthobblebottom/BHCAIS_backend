@@ -39,7 +39,7 @@ def test_files():
             headers=headers,
         )
         assert response.status_code == 200
-    print("assert response of file upload", response)
+    print("asserted  response of file upload 200")
     response = client.get(
         "/GetCatalogue",
         params={
@@ -56,7 +56,7 @@ def test_files():
     results = json.loads(response.text)["results"]
     assert response.status_code == 200 and len(results) > 1
     print(
-        "assert status code  = 200 and total length of results from GetCatalogue is more than 1."
+        "asserted status code  = 200 and total length of results from GetCatalogue is more than 1."
     )
     response = client.post(
         "/DownloadFiles",
@@ -67,7 +67,21 @@ def test_files():
             "token": user["token"],
         },
     )  # must be json not data as the arguement
-    results = json.loads("[" + response.text[response.text.find("{") : -1] + "]")
-    unique_cat = {r["main_category"] for r in results if r["main_category"] == "Place"}
+    catalog_name = ""
+    results = {}
+    for x in response.text.split("\n"):
+        if x == "":
+            continue
+        x = json.loads(x)
+        if next(iter(x.keys())) == "catalogue_name":
+            catalog_name = next(iter(x.values()))
+            results[catalog_name] = []
+        else:
+            assert catalog_name != ""
+            results[catalog_name].append(x)
+        # results = json.loads("[" + response.text[response.text.find("{") : -1] + "]")
+    unique_cat = {
+        r["main_category"] for r in results["print"] if r["main_category"] == "Place"
+    }
     assert len(unique_cat) == 1 and next(iter(unique_cat)) == "Place"
-    print("assert the only unique main cat", unique_cat)
+    print("asserted the only unique main cat is placed")
