@@ -53,6 +53,6 @@ jobs:
       run: |
         uv run pytest ./src/tests/files_test.py -s
     
-    - name: Test password_validation() function
+    - name: Test password_validation() function whether it catches validation violation
       run: |
         uv run pytest ./src/tests/password_validation_test.py -s
