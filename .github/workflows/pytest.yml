@@ -51,4 +51,4 @@ jobs:
         is_production : 'false' 
         JWT_SECRET_KEY: 'sdfdsfdsf'
       run: |
-        uv run pytest ./src/tests/files_test.py
+        uv run pytest ./src/tests/files_test.py -s
