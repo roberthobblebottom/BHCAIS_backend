@@ -24,11 +24,7 @@ def test_files():
         base_path
         / "sample_data_for_testing/LKCNHM Print Catalog_100 value sample _JT.xlsx"
     ).resolve()
-    with open(
-        # "../../sample_data_for_testing/LKCNHM Print Catalog_100 value sample _JT.xlsx",
-        file_path,
-        "rb",
-    ) as print_file:
+    with open(file_path, "rb") as print_file:
         response = client.post(
             "/UploadFiles",
             params={
