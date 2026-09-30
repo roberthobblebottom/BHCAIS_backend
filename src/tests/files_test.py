@@ -38,8 +38,9 @@ def test_files():
             files={"files": ("file1.xlsx", print_file)},
             headers=headers,
         )
-        assert response.status_code == 200
-    print("asserted  response of file upload 200")
+        assert response.status_code == 202
+    print("asserted  response of file upload 202")
+
     response = client.get(
         "/GetCatalogue",
         params={
@@ -58,6 +59,7 @@ def test_files():
     print(
         "asserted status code  = 200 and total length of results from GetCatalogue is more than 1."
     )
+
     response = client.post(
         "/DownloadFiles",
         headers=headers,
