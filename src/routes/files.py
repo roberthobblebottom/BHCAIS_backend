@@ -1,31 +1,31 @@
-import json  # noqa: I001
 from typing import Annotated
+
 import polars as pl
 from fastapi import (
     APIRouter,
-    File,
-    HTTPException,
-    UploadFile,
     BackgroundTasks,
     Depends,
+    File,
+    HTTPException,
     Query,
+    UploadFile,
 )
-from fastapi.responses import StreamingResponse
-from sqlalchemy import literal_column, bindparam
+from fastapi.responses import FileResponse
+from polars.exceptions import NoDataError
+from sqlalchemy import bindparam, literal_column
+from src.auth.jwthandler import admin_route_auth_by_token, route_auth_by_token
 from src.db.db_wrapper import engine, text
-from src.auth.jwthandler import route_auth_by_token, admin_route_auth_by_token
+from src.Models import DeleteSelectedRowsModel, DownloadFilesModel, GetCatalogueModel
+
 from ..constants import (
     get_header_dict,
     legacy_and_miscellaneous_items_report_sql_string_columns,
     library_and_archives_sql_string_columns,
-    print_sql_string_columns,
-    oral_histories_sql_string_columns,
     negative_sql_string_columns,
+    oral_histories_sql_string_columns,
+    print_sql_string_columns,
     slides_sql_string_columns,
 )
-from fastapi.responses import FileResponse
-from src.Models import DeleteSelectedRowsModel, DownloadFilesModel, GetCatalogueModel
-from polars.exceptions import NoDataError
 
 router = APIRouter()
 
