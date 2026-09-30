@@ -75,7 +75,7 @@ class GetCatalogueModel(BaseModel):
     catalogue_name: Literal[*catalogue_names]
     rows_per_page: int = Field(ge=0)
     current_page_number: int = Field(ge=0)
-    filter_str: str = Field(min_length=2)
+    filter_str: str
     sort_by: str
     descending: bool
     token: str
