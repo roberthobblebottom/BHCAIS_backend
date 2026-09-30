@@ -56,3 +56,7 @@ jobs:
     - name: Test password_validation() function whether it catches validation violation
       run: |
         uv run pytest ./src/tests/password_validation_test.py -s
+    
+    - name: File Upload contraints violation unit testing
+      run: |
+        uv run pytest ./src/tests/test_upload_files_contraints_violation.py -s

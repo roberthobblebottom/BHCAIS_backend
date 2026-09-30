@@ -25,6 +25,7 @@ from ..constants import (
 )
 from fastapi.responses import FileResponse
 from src.Models import DeleteSelectedRowsModel, DownloadFilesModel, GetCatalogueModel
+from polars.exceptions import NoDataError
 
 router = APIRouter()
 
@@ -92,32 +93,30 @@ async def get_catalogue(query: Annotated[GetCatalogueModel, Query()]):
         return {"results": results, "row_counts": row_counts}
 
 
+print_messages = []
+
+
 async def _upsert_into_db(file: File):
     contents = await file.read()
-
-    # Checking of validity of the files::w
-
-    if ".xlsx" in file.filename:
-        df = pl.read_excel(contents, infer_schema_length=0)
-    elif ".csv" in file.filename:
-        df = pl.read_csv(contents, infer_schema_length=0, ignore_errors=True)
-        while "" in df.columns:
-            df = df.drop("")
-    else:
-        raise HTTPException(
-            status_code=422,
-            details="The file " + file.filename + " is not in .csv or .xlsx",
-        )
-
-    df = df.with_columns(pl.all().cast(pl.String, strict=True)).with_columns(
-        # pl.all().str.replace_all('"', "'", literal=True)
-    )
+    # Checking of validity of the files
+    print_messages.append("_upsert_into_db")
+    try:
+        if ".xlsx" in file.filename:
+            df = pl.read_excel(contents, infer_schema_length=0)
+        elif ".csv" in file.filename:
+            df = pl.read_csv(contents, infer_schema_length=0, ignore_errors=True)
+            while "" in df.columns:
+                df = df.drop("")
+        else:
+            raise ValueError(
+                "The file " + file.filename + " is not in .csv or .xlsx",
+            )
+    except NoDataError:
+        raise ValueError("No Data in this file " + file.filename)
+    df = df.with_columns(pl.all().cast(pl.String, strict=True))
     if df.shape[0] <= 1:
-        raise HTTPException(
-            status_code=422,
-            detail="The file "
-            + file.filename
-            + " is either empty or only contains header",
+        raise ValueError(
+            "The file " + file.filename + " is either empty or only contains header",
         )
     cols = [col.lower().strip() for col in df.columns if col != ""]
 
@@ -129,8 +128,9 @@ async def _upsert_into_db(file: File):
         and cols != library_and_archives_sql_string_columns
         and cols != legacy_and_miscellaneous_items_report_sql_string_columns
     ):
-        return
-
+        raise ValueError(
+            "The file " + file.filename + " is either empty or only contains header",
+        )
     ### Individual Catalogue processing
     if cols == print_sql_string_columns:
         # Raw Insertion
@@ -843,9 +843,9 @@ async def _upsert_into_db(file: File):
     results.append({"filename": file.filename})
 
 
-@router.post("/UploadFiles")
+@router.post("/UploadFiles", status_code=202)
 async def upload_files(
-    files: Annotated[list[UploadFile], File()],
+    files: list[UploadFile],
     user_id: int,
     token: str,
     background_tasks: BackgroundTasks = None,
@@ -854,8 +854,8 @@ async def upload_files(
     results = []
     for file in files:
         print("pre check", file.filename)
-        background_tasks.add_task(_upsert_into_db, file)
 
+        background_tasks.add_task(_upsert_into_db, file)
     return {"uploaded_files": results}
 
 
