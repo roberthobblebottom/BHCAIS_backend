@@ -39,36 +39,49 @@ async def get_catalogue(query: Annotated[GetCatalogueModel, Query()]):
             "catalogue name is empty string, it needs to be one of the catalogue name!",
         )
     filter_str = "%" + query.filter_str + "%" if query.filter_str != "" else ""
+    startRow = (query.current_page_number - 1) * query.rows_per_page
+
+    where_sql_condition = ""
+    if filter_str != "":
+        for i, x in enumerate(get_header_dict[query.catalogue_name]):
+            if i == 0:
+                continue
+            keyword = "WHERE" if i == 1 else "OR"
+            where_sql_condition += (
+                f" {keyword} {literal_column(x)} ILIKE :filter_str{i}"
+            )
+    order_by_sql_condition = (
+        f""" ORDER BY {literal_column(query.sort_by)}
+        """
+        if query.sort_by not in ["desc", "null", ""]
+        else ""
+    )
+    order_by_sql_condition = (
+        order_by_sql_condition + " DESC"
+        if query.descending and order_by_sql_condition != ""
+        else ""
+    )
+    row_count_params = {
+        "sort_by": query.sort_by,
+        "start_row": startRow,
+    }
+    if filter_str != "":
+        for x in range(len(get_header_dict[query.catalogue_name])):
+            row_count_params[f"filter_str{x}"] = filter_str
+
     with engine.begin() as connection:
         row_counts = connection.execute(
-            text(f"""
-            SELECT COUNT(*) FROM {query.catalogue_name}_raw;
-        """)
+            text(
+                f"""SELECT COUNT(*) FROM {query.catalogue_name}_raw """
+                + where_sql_condition
+                + order_by_sql_condition
+            ),
+            [row_count_params],
         ).one()[0]
+
         fetchCount = row_counts if query.rows_per_page == 0 else query.rows_per_page
-
-        startRow = (query.current_page_number - 1) * query.rows_per_page
-
-        where_sql_condition = ""
-        if filter_str != "":
-            for i, x in enumerate(get_header_dict[query.catalogue_name]):
-                if i == 0:
-                    continue
-                keyword = "WHERE" if i == 1 else "OR"
-                where_sql_condition += (
-                    f" {keyword} {literal_column(x)} ILIKE :filter_str{i}"
-                )
-        order_by_sql_condition = (
-            f""" ORDER BY {literal_column(query.sort_by)}
-            """
-            if query.sort_by not in ["desc", "null", ""]
-            else ""
-        )
-        order_by_sql_condition = (
-            order_by_sql_condition + " DESC"
-            if query.descending and order_by_sql_condition != ""
-            else ""
-        )
+        print("....")
+        print(fetchCount, row_counts, query.rows_per_page)
         sql = (
             f"SELECT * FROM {literal_column(query.catalogue_name)}_raw "
             + where_sql_condition
@@ -90,6 +103,7 @@ async def get_catalogue(query: Annotated[GetCatalogueModel, Query()]):
                 [params],
             ).all()
         ]
+
         return {"results": results, "row_counts": row_counts}
 
 
