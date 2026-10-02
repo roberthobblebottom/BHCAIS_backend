@@ -74,14 +74,11 @@ async def get_catalogue(query: Annotated[GetCatalogueModel, Query()]):
             text(
                 f"""SELECT COUNT(*) FROM {query.catalogue_name}_raw """
                 + where_sql_condition
-                + order_by_sql_condition
             ),
             [row_count_params],
         ).one()[0]
 
         fetchCount = row_counts if query.rows_per_page == 0 else query.rows_per_page
-        print("....")
-        print(fetchCount, row_counts, query.rows_per_page)
         sql = (
             f"SELECT * FROM {literal_column(query.catalogue_name)}_raw "
             + where_sql_condition
@@ -922,6 +919,7 @@ async def download_files(
     conditions: DownloadFilesModel,
 ):
     Depends(route_auth_by_token(token=conditions.token))
+
     if conditions.selected_catalogues == []:
         raise HTTPException(422, "Missing selected catalogue names.")
     for catalogue_name in conditions.selected_catalogues:
@@ -930,26 +928,52 @@ async def download_files(
         where_sql_date_range_condition = ""
         search_terms = conditions.search_terms
         params = {}
+
         if len(search_terms.keys()) != 0 and catalogue_name in search_terms:
-            for i, x in enumerate(search_terms[catalogue_name].items()):
+            for i, fieldAndSearchTermPair in enumerate(
+                search_terms[catalogue_name].items()
+            ):
+                print("fieldAndSearchTermPair", fieldAndSearchTermPair)
+                if fieldAndSearchTermPair[0].lower() == "select all":
+                    for j, column2 in enumerate(get_header_dict[catalogue_name]):
+                        keyword = (
+                            "AND" if "WHERE" in where_condition else "WHERE"
+                        )  # Using OR returns too much back.
+                        where_condition += (
+                            f" {keyword} {literal_column(column2)} = :search_term{j}"
+                            if "sn" in column2 and fieldAndSearchTermPair[1] is int
+                            else ""
+                            if "sn" in column2 and fieldAndSearchTermPair[1] is not int
+                            else f" {keyword} {literal_column(column2)} ILIKE :search_term{j}"
+                        )
+                        params[f"search_term{j}"] = (
+                            "%" + fieldAndSearchTermPair[1] + "%"
+                        )
+                    continue
+
                 keyword = (
-                    "WHERE" if i == 0 else "AND"
+                    "AND" if "WHERE" in where_condition else "WHERE"
                 )  # Using OR returns too much back.
                 where_condition += (
-                    f" {keyword} {literal_column(x[0])} ILIKE :search_term{i}"
+                    f" {keyword} {literal_column(fieldAndSearchTermPair[0])} = :search_term{i}"
+                    if "sn" in fieldAndSearchTermPair[0]
+                    and fieldAndSearchTermPair[1] is int
+                    else ""
+                    if "sn" in fieldAndSearchTermPair[0]
+                    and fieldAndSearchTermPair[1] is not int
+                    else f" {keyword} {literal_column(fieldAndSearchTermPair[0])} ILIKE :search_term{i}"
                 )
-                params[f"search_term{i}"] = "%" + x[1] + "%"
+                params[f"search_term{i}"] = "%" + fieldAndSearchTermPair[1] + "%"
 
         with engine.begin() as connection:
             result = connection.execute(
                 text(sql + where_condition + where_sql_date_range_condition),
                 [params],
             ).all()
-
             yield {"catalogue_name": catalogue_name}
             if len(result) > 0:
-                for i, x in enumerate(result):
-                    yield x._asdict()
+                for i, fieldAndSearchTermPair in enumerate(result):
+                    yield fieldAndSearchTermPair._asdict()
             else:
                 yield {"message": "no results"}
 
