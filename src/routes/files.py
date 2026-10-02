@@ -918,13 +918,16 @@ async def delete_all_catalogue_data(token: str):
 async def download_files(
     conditions: DownloadFilesModel,
 ):
-    Depends(route_auth_by_token(token=conditions.token))
-
+    try:
+        Depends(route_auth_by_token(token=conditions.token))
+    except HTTPException as e:
+        raise e  # noqa: TRY201
     if conditions.selected_catalogues == []:
         raise HTTPException(422, "Missing selected catalogue names.")
     for catalogue_name in conditions.selected_catalogues:
         sql = f"""SELECT * FROM {literal_column(catalogue_name)}_raw"""
         where_condition = ""
+        where_select_all_condition = ""
         where_sql_date_range_condition = ""
         search_terms = conditions.search_terms
         params = {}
@@ -933,22 +936,23 @@ async def download_files(
             for i, fieldAndSearchTermPair in enumerate(
                 search_terms[catalogue_name].items()
             ):
-                print("fieldAndSearchTermPair", fieldAndSearchTermPair)
                 if fieldAndSearchTermPair[0].lower() == "select all":
+                    where_select_all_condition += "("
                     for j, column2 in enumerate(get_header_dict[catalogue_name]):
-                        keyword = (
-                            "AND" if "WHERE" in where_condition else "WHERE"
-                        )  # Using OR returns too much back.
-                        where_condition += (
+                        keyword = "" if where_select_all_condition == "(" else "OR"
+                        where_select_all_condition += (
                             f" {keyword} {literal_column(column2)} = :search_term{j}"
                             if "sn" in column2 and fieldAndSearchTermPair[1] is int
                             else ""
                             if "sn" in column2 and fieldAndSearchTermPair[1] is not int
                             else f" {keyword} {literal_column(column2)} ILIKE :search_term{j}"
                         )
+
                         params[f"search_term{j}"] = (
                             "%" + fieldAndSearchTermPair[1] + "%"
                         )
+
+                    where_select_all_condition += ")"
                     continue
 
                 keyword = (
@@ -964,10 +968,21 @@ async def download_files(
                     else f" {keyword} {literal_column(fieldAndSearchTermPair[0])} ILIKE :search_term{i}"
                 )
                 params[f"search_term{i}"] = "%" + fieldAndSearchTermPair[1] + "%"
-
+            where_select_all_condition = (
+                " WHERE " + where_select_all_condition
+                if where_condition == ""
+                else " OR " + where_select_all_condition
+            )
         with engine.begin() as connection:
+            ful_sql = (
+                sql
+                + where_condition
+                + where_select_all_condition
+                + where_sql_date_range_condition
+            )
+            print(ful_sql)
             result = connection.execute(
-                text(sql + where_condition + where_sql_date_range_condition),
+                text(ful_sql),
                 [params],
             ).all()
             yield {"catalogue_name": catalogue_name}
