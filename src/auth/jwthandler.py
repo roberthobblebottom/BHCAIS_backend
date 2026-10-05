@@ -1,15 +1,14 @@
 import os
 from datetime import datetime, timedelta
+from typing import Annotated
 
-from dotenv import load_dotenv
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Header, HTTPException, Request
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2, OAuth2PasswordBearer
 from fastapi.security.utils import get_authorization_scheme_param
 from jose import JWTError, jwt
 from src.db.db_wrapper import does_admin_exist_in_db, does_user_exist_in_db
 
-load_dotenv()
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
 
 ALGORITHM = "HS256"
@@ -64,45 +63,73 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def route_auth_by_token(token: str = Depends(oauth2_scheme)):
+def route_auth_by_token(authorization: Annotated[str, Header()]):
     credentials_exception = HTTPException(
         status_code=401,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     print("route auth by token")
+
+    # Extract bearer token from header
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            print("scheme does not have bearer")
+            raise credentials_exception
+    except ValueError:
+        print("Value error on auth split")
+        raise credentials_exception
+
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("email")
         if email is None:
+            print("if email is none")
             raise credentials_exception
         if not does_user_exist_in_db(email):
-            print("5")
+            print("if user does not exist in db")
             raise credentials_exception
     except JWTError:
-        print("6")
+        print("JWT Error")
         raise credentials_exception
 
     print("auth success")
     return email
 
 
-def admin_route_auth_by_token(token: str = Depends(oauth2_scheme)):
+def admin_route_auth_by_token(authorization: Annotated[str, Header()]):
     credentials_exception = HTTPException(
         status_code=401,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     print("admin route auth by token")
+    # Extract bearer token from header
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            print("scheme does not have bear")
+            raise credentials_exception
+    except ValueError:
+        print("Value error on auth split")
+        raise credentials_exception
+
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("email")
         user_type: str = payload.get("user_type")
+        if user_type != "admin":
+            print("user type is not admin")
+            raise credentials_exception
         if email is None or user_type is None:
+            print("if email is none or user_type is none")
             raise credentials_exception
         if not does_admin_exist_in_db(email, user_type):
+            print("if user does not exist in db")
             raise credentials_exception
     except JWTError:
+        print("JWT Error")
         raise credentials_exception
 
     print("auth success")

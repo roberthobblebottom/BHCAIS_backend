@@ -3,12 +3,15 @@ from enum import Enum
 from pathlib import Path
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import AfterValidator, BaseModel, EmailStr, Field
 
 from src.constants import catalogue_names, passwordError, passwordRegex
 
 router = APIRouter()
+
+
+from src.auth.jwthandler import admin_route_auth_by_token, route_auth_by_token
 
 
 # Users
@@ -23,6 +26,15 @@ def password_validation(password: str) -> str:
             422, passwordError + " Or the password is a common password."
         )
     return password
+
+
+def password_validation_optional(password: str):
+    if password == "" or password == None:
+        print("1")
+        return ""
+    else:
+        print("2")
+        return password_validation(password)
 
 
 class UserTypeEnum(str, Enum):
@@ -45,7 +57,6 @@ class ChangePasswordForm(BaseModel):
     old_password: str
     new_password: Annotated[str, AfterValidator(password_validation)]
     confirm_new_password: Annotated[str, AfterValidator(password_validation)]
-    token: str
 
 
 class CreateUserForm(BaseModel):
@@ -53,21 +64,20 @@ class CreateUserForm(BaseModel):
     password: Annotated[str, AfterValidator(password_validation)]
     confirm_password: Annotated[str, AfterValidator(password_validation)]
     user_type: UserTypeEnum
-    token: str
 
 
 class EditUserForm(BaseModel):
     user_id: int = Field(json_schema_extra=True)
     email: EmailStr
-    password: Annotated[str, AfterValidator(password_validation)]
-    confirm_password: Annotated[str, AfterValidator(password_validation)]
+    password: Annotated[str | None, AfterValidator(password_validation_optional)]
+    confirm_password: Annotated[
+        str | None, AfterValidator(password_validation_optional)
+    ]
     user_type: UserTypeEnum
-    token: str
 
 
 class DeleteUserForm(BaseModel):
     user_id: int = Field(json_schema_extra=True)
-    token: str
 
 
 # FILES
@@ -78,17 +88,14 @@ class GetCatalogueModel(BaseModel):
     filter_str: str
     sort_by: str
     descending: bool
-    token: str
 
 
 class DownloadFilesModel(BaseModel):
     search_terms: dict
     selected_catalogues: list[Literal[*catalogue_names]]
-    token: str
 
 
 class DeleteSelectedRowsModel(BaseModel):
     ids_to_be_deleted: list[int, Field(json_schema_extra=True)]
     catalogue_name: Literal[*catalogue_names]
     current_primary_key: str
-    token: str

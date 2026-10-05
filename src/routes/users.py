@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -15,7 +15,6 @@ from src.auth.jwthandler import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     admin_route_auth_by_token,
     create_access_token,
-    route_auth_by_token,
 )
 from src.auth.users import (
     change_password,
@@ -73,8 +72,9 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):
 
 
 @router.put("/ChangePassword")
-async def change_password_route(form: ChangePasswordForm):
-    Depends(route_auth_by_token(form.token))
+async def change_password_route(
+    form: ChangePasswordForm, email: str = Depends(admin_route_auth_by_token)
+):
     if (
         form.new_password != form.confirm_new_password
         or form.new_password == ""
@@ -101,7 +101,7 @@ async def change_password_route(form: ChangePasswordForm):
 
 
 @router.get("/GetAllUsers")
-async def get_all_users():
+async def get_all_users(email: str = Depends(admin_route_auth_by_token)):
     try:
         with engine.begin() as connection:
             results = connection.execute(
@@ -113,8 +113,9 @@ async def get_all_users():
 
 
 @router.post("/CreateUser")
-async def create_user(form: CreateUserForm):
-    Depends(admin_route_auth_by_token(form.token))
+async def create_user(
+    form: CreateUserForm, email: str = Depends(admin_route_auth_by_token)
+):
     if (
         form.password != form.confirm_password
         and form.password != ""
@@ -123,8 +124,7 @@ async def create_user(form: CreateUserForm):
         raise HTTPException(
             422, "Password and confirm_passwords doesn't equate to each other"
         )
-    password_validation(form.password)
-    password_validation(form.confirm_password)
+
     with engine.begin() as connection:
         try:
             connection.execute(
@@ -149,8 +149,9 @@ async def create_user(form: CreateUserForm):
 
 
 @router.put("/EditUser")
-async def edit_user(form: EditUserForm):
-    Depends(admin_route_auth_by_token(form.token))
+async def edit_user(
+    form: EditUserForm = Body(...), email: str = Depends(admin_route_auth_by_token)
+):
     if (
         form.password != form.confirm_password
         and form.password != ""
@@ -159,9 +160,7 @@ async def edit_user(form: EditUserForm):
         raise HTTPException(
             422, "Password and confirm_passwords doesn't equate to each other"
         )
-    if form.password != "" and form.confirm_password != "":
-        password_validation(form.password)
-        password_validation(form.confirm_password)
+
     with engine.begin() as connection:
         try:
             connection.execute(
@@ -202,8 +201,9 @@ async def edit_user(form: EditUserForm):
 
 
 @router.delete("/DeleteUser")
-async def delete_user(form: DeleteUserForm):
-    Depends(admin_route_auth_by_token(form.token))
+async def delete_user(
+    form: DeleteUserForm, email: str = Depends(admin_route_auth_by_token)
+):
     user_id = form.user_id
     if user_id == None:
         raise HTTPException(422, "user_id is null")

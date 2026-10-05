@@ -31,8 +31,10 @@ router = APIRouter()
 
 
 @router.get("/GetCatalogue", status_code=200)
-async def get_catalogue(query: Annotated[GetCatalogueModel, Query()]):
-    Depends(route_auth_by_token(query.token))
+async def get_catalogue(
+    query: Annotated[GetCatalogueModel, Query()],
+    email: str = Depends(route_auth_by_token),
+):
     if query.catalogue_name == "":
         raise HTTPException(
             422,
@@ -857,11 +859,10 @@ async def _upsert_into_db(file: File):
 @router.post("/UploadFiles", status_code=202)
 async def upload_files(
     files: list[UploadFile],
-    user_id: int,
-    token: str,
+    user_id: int = Query(...),
+    email: str = Depends(route_auth_by_token),
     background_tasks: BackgroundTasks = None,
 ):
-    route_auth_by_token(token)
     results = []
     for file in files:
         print("pre check", file.filename)
@@ -873,9 +874,8 @@ async def upload_files(
 @router.delete("/DeleteSelectedRows")
 async def delete_selected_rows(
     model_instance: DeleteSelectedRowsModel,
+    email: str = Depends(route_auth_by_token),
 ):
-
-    Depends(route_auth_by_token(model_instance.token))
 
     with engine.begin() as connection:
         connection.execute(
@@ -899,8 +899,10 @@ async def delete_selected_rows(
 
 
 @router.delete("/DeleteAllCatalogueData")
-async def delete_all_catalogue_data(token: str):
-    Depends(admin_route_auth_by_token(token))
+async def delete_all_catalogue_data(
+    token: str,
+    email: str = Depends(route_auth_by_token),
+):
     with engine.begin() as connection:
         connection.execute(
             text("""DELETE FROM print_raw;
@@ -917,11 +919,9 @@ async def delete_all_catalogue_data(token: str):
 @router.post("/DownloadFiles")
 async def download_files(
     conditions: DownloadFilesModel,
+    email: str = Depends(route_auth_by_token),
 ):
-    try:
-        Depends(route_auth_by_token(token=conditions.token))
-    except HTTPException as e:
-        raise e  # noqa: TRY201
+
     if conditions.selected_catalogues == []:
         raise HTTPException(422, "Missing selected catalogue names.")
     for catalogue_name in conditions.selected_catalogues:
@@ -1536,6 +1536,6 @@ async def download_files(
 
 
 @router.get("/DownloadTemplatesForTheCatalogs")
-def download_templates_for_the_catalogs(token: str = Depends(route_auth_by_token)):
+def download_templates_for_the_catalogs(email: str = Depends(route_auth_by_token)):
     file_path = "./templates for the catalogs.zip"
     return FileResponse(file_path, media_type="application/zip")
