@@ -105,7 +105,7 @@ async def get_all_users(email: str = Depends(admin_route_auth_by_token)):
     try:
         with engine.begin() as connection:
             results = connection.execute(
-                text("SELECT user_id,email,user_type FROM login_user;")
+                text("SELECT user_id,email,user_type FROM login_user")
             ).all()
             return {"results": [x._asdict() for x in results]}
     except (NoSuchTableError, NoSuchColumnError, ResourceClosedError) as e:

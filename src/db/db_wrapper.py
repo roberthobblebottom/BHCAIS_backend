@@ -17,9 +17,9 @@ try:
     with engine.begin() as connection:
         connection.execute(text("SET search_path TO public"))
 
-        results = connection.execute(text("SELECT current_database();")).one()
+        results = connection.execute(text("SELECT current_database()")).one()
         print("database name:", results)
-        results = connection.execute(text("SELECT current_user;")).one()
+        results = connection.execute(text("SELECT current_user")).one()
         print("current database user:", results)
 
 except Exception as ex:  # noqa: BLE001
@@ -48,7 +48,7 @@ def does_admin_exist_in_db(email: str, user_type: str):
 #         names = [names]
 #     for name in names:
 #         result = connection.execute(
-#             text("SELECT 1 FROM person WHERE :name=ANY(name_held) LIMIT 1;"),
+#             text("SELECT 1 FROM person WHERE :name=ANY(name_held) LIMIT 1"),
 #             [{"name": name}],
 #         ).first()
 #         if result is None:
@@ -153,14 +153,14 @@ def does_admin_exist_in_db(email: str, user_type: str):
 #                                 SELECT 1
 #                                 FROM locality
 #                                 WHERE locality_name = :locality_name
-#                                 LIMIT 1;
+#                                 LIMIT 1
 #                                 """
 #         if not isinstance(locality, tuple)
 #         else """
 #                                 SELECT 1
 #                                 FROM locality
 #                                 WHERE locality_name IN :locality_name
-#                                 LIMIT 1;
+#                                 LIMIT 1
 #                                 """
 #     )
 

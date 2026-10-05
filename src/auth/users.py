@@ -21,7 +21,7 @@ async def _get_user(
         result = connection.execute(
             text("""SELECT user_id, email,salted_password, user_type 
                     FROM login_user 
-                    WHERE email = :username;"""),
+                    WHERE email = :username"""),
             [{"username": username}],
         )
     result = result.all()

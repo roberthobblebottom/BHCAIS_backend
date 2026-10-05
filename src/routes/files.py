@@ -85,7 +85,7 @@ async def get_catalogue(
             f"SELECT * FROM {literal_column(query.catalogue_name)}_raw "
             + where_sql_condition
             + order_by_sql_condition
-            + " LIMIT :fetch_count OFFSET :start_row;"
+            + " LIMIT :fetch_count OFFSET :start_row"
         )
         params = {
             "sort_by": query.sort_by,
@@ -900,7 +900,6 @@ async def delete_selected_rows(
 
 @router.delete("/DeleteAllCatalogueData")
 async def delete_all_catalogue_data(
-    token: str,
     email: str = Depends(route_auth_by_token),
 ):
     with engine.begin() as connection:
@@ -921,7 +920,6 @@ async def download_files(
     conditions: DownloadFilesModel,
     email: str = Depends(route_auth_by_token),
 ):
-
     if conditions.selected_catalogues == []:
         raise HTTPException(422, "Missing selected catalogue names.")
     for catalogue_name in conditions.selected_catalogues:

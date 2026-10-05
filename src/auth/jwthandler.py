@@ -80,7 +80,6 @@ def route_auth_by_token(authorization: Annotated[str, Header()]):
     except ValueError:
         print("Value error on auth split")
         raise credentials_exception
-
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("email")
