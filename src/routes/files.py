@@ -972,7 +972,10 @@ async def download_files(
                 " WHERE " + where_select_all_condition
                 if where_condition == ""
                 else " OR " + where_select_all_condition
+                if where_select_all_condition != ""
+                else ""
             )
+            print("where_select_all_condition", where_select_all_condition)
         with engine.begin() as connection:
             ful_sql = (
                 sql
