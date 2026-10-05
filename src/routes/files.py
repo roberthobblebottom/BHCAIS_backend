@@ -922,7 +922,6 @@ async def download_files(
 ):
     if conditions.selected_catalogues == []:
         raise HTTPException(422, "Missing selected catalogue names.")
-    print("conditions", conditions)
     for catalogue_name in conditions.selected_catalogues:
         sql = f"""SELECT * FROM {literal_column(catalogue_name)}_raw"""
         where_condition = ""
@@ -982,7 +981,6 @@ async def download_files(
                 + where_select_all_condition
                 + where_sql_date_range_condition
             )
-            print(ful_sql)
             result = connection.execute(
                 text(ful_sql),
                 [params],
