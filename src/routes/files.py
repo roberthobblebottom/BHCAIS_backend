@@ -925,62 +925,64 @@ async def download_files(
     for catalogue_name in conditions.selected_catalogues:
         sql = f"""SELECT * FROM {literal_column(catalogue_name)}_raw"""
         where_condition = ""
-        where_select_all_condition = ""
-        where_sql_date_range_condition = ""
+        where_select_all_conditions = []
+
         search_terms = conditions.search_terms
         params = {}
-
         if len(search_terms.keys()) != 0 and catalogue_name in search_terms:
             for i, fieldAndSearchTermPair in enumerate(
                 search_terms[catalogue_name].items()
             ):
-                if fieldAndSearchTermPair[0].lower() == "select all":
+                if "select all" in fieldAndSearchTermPair[0].lower():
+                    where_select_all_condition = ""
                     where_select_all_condition += "("
                     for j, column2 in enumerate(get_header_dict[catalogue_name]):
+                        column2 = column2.split("__")[0]
                         keyword = "" if where_select_all_condition == "(" else "OR"
                         where_select_all_condition += (
-                            f" {keyword} {literal_column(column2)} = :search_term{j}"
+                            f" {keyword} {literal_column(column2)} = :search_term_select_all_{fieldAndSearchTermPair[1]}_{j}"
                             if "sn" in column2 and fieldAndSearchTermPair[1] is int
                             else ""
                             if "sn" in column2 and fieldAndSearchTermPair[1] is not int
-                            else f" {keyword} {literal_column(column2)} ILIKE :search_term{j}"
+                            else f" {keyword} {literal_column(column2)} ILIKE :search_term_select_all_{fieldAndSearchTermPair[1]}_{j}"
                         )
 
-                        params[f"search_term{j}"] = (
-                            "%" + fieldAndSearchTermPair[1] + "%"
-                        )
+                        params[
+                            f"search_term_select_all_{fieldAndSearchTermPair[1]}_{j}"
+                        ] = "%" + fieldAndSearchTermPair[1] + "%"
 
                     where_select_all_condition += ")"
+                    where_select_all_conditions.append(where_select_all_condition)
                     continue
 
                 keyword = (
                     "AND" if "WHERE" in where_condition else "WHERE"
                 )  # Using OR returns too much back.
+                column3 = fieldAndSearchTermPair[0].split("__")[0]
                 where_condition += (
-                    f" {keyword} {literal_column(fieldAndSearchTermPair[0])} = :search_term{i}"
+                    f" {keyword} {literal_column(column3)} = :search_term_{fieldAndSearchTermPair[0]}_{fieldAndSearchTermPair[1]}_{i}"
                     if "sn" in fieldAndSearchTermPair[0]
                     and fieldAndSearchTermPair[1] is int
                     else ""
                     if "sn" in fieldAndSearchTermPair[0]
                     and fieldAndSearchTermPair[1] is not int
-                    else f" {keyword} {literal_column(fieldAndSearchTermPair[0])} ILIKE :search_term{i}"
+                    else f" {keyword} {literal_column(column3)} ILIKE :search_term_{fieldAndSearchTermPair[0]}_{fieldAndSearchTermPair[1]}_{i}"
                 )
-                params[f"search_term{i}"] = "%" + fieldAndSearchTermPair[1] + "%"
-            where_select_all_condition = (
-                " WHERE " + where_select_all_condition
-                if where_condition == ""
-                else " OR " + where_select_all_condition
-                if where_select_all_condition != ""
-                else ""
-            )
-            print("where_select_all_condition", where_select_all_condition)
+                params[
+                    f"search_term_{fieldAndSearchTermPair[0]}_{fieldAndSearchTermPair[1]}_{i}"
+                ] = "%" + fieldAndSearchTermPair[1] + "%"
+            for i, where_select_all_condition in enumerate(where_select_all_conditions):
+                where_select_all_conditions[i] = (
+                    " WHERE " + where_select_all_condition
+                    if where_condition == "" and i == 0
+                    else " OR " + where_select_all_condition
+                    if where_select_all_condition != ""
+                    else ""
+                )
+        ful_sql = sql + where_condition
+        for where_select_all_condition in where_select_all_conditions:
+            ful_sql += where_select_all_condition
         with engine.begin() as connection:
-            ful_sql = (
-                sql
-                + where_condition
-                + where_select_all_condition
-                + where_sql_date_range_condition
-            )
             result = connection.execute(
                 text(ful_sql),
                 [params],
