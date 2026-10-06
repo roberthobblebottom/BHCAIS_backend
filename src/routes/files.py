@@ -920,12 +920,13 @@ async def download_files(
     conditions: DownloadFilesModel,
     email: str = Depends(route_auth_by_token),
 ):
+    # Removed select all option
     if conditions.selected_catalogues == []:
         raise HTTPException(422, "Missing selected catalogue names.")
     for catalogue_name in conditions.selected_catalogues:
         sql = f"""SELECT * FROM {literal_column(catalogue_name)}_raw"""
         where_condition = ""
-        where_select_all_conditions = []
+        # where_select_all_conditions = []
 
         search_terms = conditions.search_terms
         params = {}
@@ -933,27 +934,27 @@ async def download_files(
             for i, fieldAndSearchTermPair in enumerate(
                 search_terms[catalogue_name].items()
             ):
-                if "select all" in fieldAndSearchTermPair[0].lower():
-                    where_select_all_condition = ""
-                    where_select_all_condition += "("
-                    for j, column2 in enumerate(get_header_dict[catalogue_name]):
-                        column2 = column2.split("__")[0]
-                        keyword = "" if where_select_all_condition == "(" else "OR"
-                        where_select_all_condition += (
-                            f" {keyword} {literal_column(column2)} = :search_term_select_all_{fieldAndSearchTermPair[1]}_{j}"
-                            if "sn" in column2 and fieldAndSearchTermPair[1] is int
-                            else ""
-                            if "sn" in column2 and fieldAndSearchTermPair[1] is not int
-                            else f" {keyword} {literal_column(column2)} ILIKE :search_term_select_all_{fieldAndSearchTermPair[1]}_{j}"
-                        )
+                # if "select all" in fieldAndSearchTermPair[0].lower():
+                #     where_select_all_condition = ""
+                #     where_select_all_condition += "("
+                #     for j, column2 in enumerate(get_header_dict[catalogue_name]):
+                #         column2 = column2.split("__")[0]
+                #         keyword = "" if where_select_all_condition == "(" else "OR"
+                #         where_select_all_condition += (
+                #             f" {keyword} {literal_column(column2)} = :search_term_select_all_{fieldAndSearchTermPair[1]}_{j}"
+                #             if "sn" in column2 and fieldAndSearchTermPair[1] is int
+                #             else ""
+                #             if "sn" in column2 and fieldAndSearchTermPair[1] is not int
+                #             else f" {keyword} {literal_column(column2)} ILIKE :search_term_select_all_{fieldAndSearchTermPair[1]}_{j}"
+                #         )
 
-                        params[
-                            f"search_term_select_all_{fieldAndSearchTermPair[1]}_{j}"
-                        ] = "%" + fieldAndSearchTermPair[1] + "%"
+                #         params[
+                #             f"search_term_select_all_{fieldAndSearchTermPair[1]}_{j}"
+                #         ] = "%" + fieldAndSearchTermPair[1] + "%"
 
-                    where_select_all_condition += ")"
-                    where_select_all_conditions.append(where_select_all_condition)
-                    continue
+                #     where_select_all_condition += ")"
+                #     where_select_all_conditions.append(where_select_all_condition)
+                #     continue
 
                 keyword = (
                     "AND" if "WHERE" in where_condition else "WHERE"
@@ -971,17 +972,17 @@ async def download_files(
                 params[
                     f"search_term_{fieldAndSearchTermPair[0]}_{fieldAndSearchTermPair[1]}_{i}"
                 ] = "%" + fieldAndSearchTermPair[1] + "%"
-            for i, where_select_all_condition in enumerate(where_select_all_conditions):
-                where_select_all_conditions[i] = (
-                    " WHERE " + where_select_all_condition
-                    if where_condition == "" and i == 0
-                    else " OR " + where_select_all_condition
-                    if where_select_all_condition != ""
-                    else ""
-                )
+            # for i, where_select_all_condition in enumerate(where_select_all_conditions):
+            #     where_select_all_conditions[i] = (
+            #         " WHERE " + where_select_all_condition
+            #         if where_condition == "" and i == 0
+            #         else " OR " + where_select_all_condition
+            #         if where_select_all_condition != ""
+            #         else ""
+            #     )
         ful_sql = sql + where_condition
-        for where_select_all_condition in where_select_all_conditions:
-            ful_sql += where_select_all_condition
+        # for where_select_all_condition in where_select_all_conditions:
+        #     ful_sql += where_select_all_condition
         with engine.begin() as connection:
             result = connection.execute(
                 text(ful_sql),
