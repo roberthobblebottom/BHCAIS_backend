@@ -1,4 +1,4 @@
-name: Pull Deploy the fastapi server to Production
+name: Pull and Deploy the fastapi server to Production
 
 on:
   push:
