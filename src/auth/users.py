@@ -15,35 +15,76 @@ def get_password_hash(password):
 
 
 async def _get_user(
-    username: str,
+    email: str,
 ):
     with engine.begin() as connection:
         result = connection.execute(
             text("""SELECT user_id, email,salted_password, user_type 
                     FROM login_user 
-                    WHERE email = :username"""),
-            [{"username": username}],
+                    WHERE email = :email"""),
+            [{"email": email}],
         )
     result = result.all()
     if len(result) == 0:  # can't find email
-        raise Exception("Cant find username:", username)  # noqa: TRY002
+        raise Exception("Cant find email:", email)  # noqa: TRY002
 
     return result[0]  # first result
 
 
-async def validate_user(user: OAuth2PasswordRequestForm = Depends()):  # noqa: B008
+async def _set_login_tries(email: str, login_tries: int):
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                UPDATE login_user 
+                WHERE email = :email 
+                SET login_tries=:login_tries
+                """,
+                    [{"email": email, "login_tries": login_tries}],
+                )
+            )
+    except:  # noqa: E722
+        raise Exception("Cant find email:", email)  # noqa: TRY002
+
+
+async def _get_login_tries(email: str):
+    with engine.begin() as connection:
+        result = connection.execute(
+            text("""SELECT login_tries, ban_expiry 
+                    FROM login_user 
+                    WHERE email = :email"""),
+            [{"email": email}],
+        )
+    result = result.one()
+    print(result)
+    if len(result) == 0:  # can't find email
+        raise Exception("Cant find email:", email)  # noqa: TRY002
+
+    return result[0]  # first result
+
+
+async def _401_Exception(email: str, login_tries: int):
+    login_tries += 1
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Incorrect username or password",
+    )
+    await _set_login_tries(email, login_tries)
+
+
+async def validate_user(
+    user: OAuth2PasswordRequestForm = Depends(), enable_login_tries_count=False
+):  # noqa: B008
+    login_tries, ban_expiry = await _get_login_tries(user.username)
+    print("login tries", login_tries)
     try:
         db_user = await _get_user(user.username)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-        ) from exc
+    except Exception:
+        _401_Exception(user.username, login_tries)
     if not verify_password(user.password, db_user[2]):  # salted_password from db
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-        )
+        _401_Exception(user.username, login_tries)
+
     return db_user
 
 
