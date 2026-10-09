@@ -35,7 +35,7 @@ router = APIRouter()
 
 @router.post("/Login")
 async def login(user: OAuth2PasswordRequestForm = Depends()):
-    user = await validate_user(user)
+    user = await validate_user(user, True)
     # user = None
     if not user:
         raise HTTPException(
