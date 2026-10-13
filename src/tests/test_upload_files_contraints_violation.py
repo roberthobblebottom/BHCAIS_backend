@@ -96,9 +96,9 @@ def test_upload_files_contraints_violation():
     print("EXPECTED ERROR:", error)
     assert "ValueError" not in error
 
-    file_path5 = (base_path / "sample_data_for_testing/sample_empty.csv").resolve()
+    file_path6 = (base_path / "sample_data_for_testing/sample_empty.csv").resolve()
     with (
-        open(file_path5, "rb") as f,
+        open(file_path6, "rb") as f,
         raises(ValueError) as e_info,
     ):
         client.post(
@@ -108,6 +108,48 @@ def test_upload_files_contraints_violation():
                 "token": user["token"],
             },
             files={"files": ("file1.csv", f)},
+            headers=headers,
+        )
+    error = str(e_info.value)
+    print("EXPECTED ERROR:", error)
+    assert "ValueError" not in error
+
+    file_path6 = (
+        base_path
+        / "sample_data_for_testing/prints with some missing serial numbers.csv"
+    ).resolve()
+    with (
+        open(file_path6, "rb") as f,
+        raises(ValueError) as e_info,
+    ):
+        client.post(
+            "/UploadFiles",
+            params={
+                "user_id": user["user_id"],
+                "token": user["token"],
+            },
+            files={"files": ("file1.csv", f)},
+            headers=headers,
+        )
+    error = str(e_info.value)
+    print("EXPECTED ERROR:", error)
+    assert "ValueError" not in error
+
+    file_path6 = (
+        base_path
+        / "sample_data_for_testing/prints with some missing serial numbers.xlsx"
+    ).resolve()
+    with (
+        open(file_path6, "rb") as f,
+        raises(ValueError) as e_info,
+    ):
+        client.post(
+            "/UploadFiles",
+            params={
+                "user_id": user["user_id"],
+                "token": user["token"],
+            },
+            files={"files": ("file1.xlsx", f)},
             headers=headers,
         )
     error = str(e_info.value)

@@ -144,6 +144,16 @@ async def _upsert_into_db(file: File):
         raise ValueError(
             "The file " + file.filename + " is either empty or only contains header",
         )
+    serial_number_column_name = cols[0]
+    if (
+        df.filter(pl.col(serial_number_column_name).is_null())[
+            serial_number_column_name
+        ].len()
+        > 0
+    ):
+        raise ValueError(
+            "The file " + file.filename + " has one or more missing serial number"
+        )
     ### Individual Catalogue processing
     if cols == print_sql_string_columns:
         # Raw Insertion
