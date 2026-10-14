@@ -18,13 +18,14 @@ from src.db.db_wrapper import engine, text
 from src.Models import DeleteSelectedRowsModel, DownloadFilesModel, GetCatalogueModel
 
 from ..constants import (
+    collection_sql_field_names,
     get_header_dict,
-    legacy_and_miscellaneous_items_report_sql_string_columns,
-    library_and_archives_sql_string_columns,
-    negative_sql_string_columns,
-    oral_histories_sql_string_columns,
-    print_sql_string_columns,
-    slides_sql_string_columns,
+    legacy_and_miscellaneous_items_report_sql_field_names,
+    library_and_archives_sql_field_names,
+    negative_sql_field_names,
+    oral_histories_sql_field_names,
+    print_sql_field_names,
+    slides_sql_field_names,
 )
 
 router = APIRouter()
@@ -134,12 +135,13 @@ async def _upsert_into_db(file: File):
     cols = [col.lower().strip() for col in df.columns if col != ""]
 
     if (
-        cols != print_sql_string_columns
-        and cols != oral_histories_sql_string_columns
-        and cols != slides_sql_string_columns
-        and cols != negative_sql_string_columns
-        and cols != library_and_archives_sql_string_columns
-        and cols != legacy_and_miscellaneous_items_report_sql_string_columns
+        cols != print_sql_field_names
+        and cols != oral_histories_sql_field_names
+        and cols != slides_sql_field_names
+        and cols != negative_sql_field_names
+        and cols != library_and_archives_sql_field_names
+        and cols != legacy_and_miscellaneous_items_report_sql_field_names
+        and cols != collection_sql_field_names
     ):
         raise ValueError(
             "The file " + file.filename + " is either empty or only contains header",
@@ -155,7 +157,7 @@ async def _upsert_into_db(file: File):
             "The file " + file.filename + " has one or more missing serial number"
         )
     ### Individual Catalogue processing
-    if cols == print_sql_string_columns:
+    if cols == print_sql_field_names:
         # Raw Insertion
         df_raw = df.clone()
 
@@ -264,7 +266,7 @@ async def _upsert_into_db(file: File):
                 ),
                 df_raw.to_dicts(),
             )
-    elif cols == negative_sql_string_columns:
+    elif cols == negative_sql_field_names:
         # Raw Insertion
         df_raw = df.clone()
         with engine.begin() as connection:
@@ -371,7 +373,7 @@ async def _upsert_into_db(file: File):
                 df_raw.to_dicts(),
             )
             # future futher processing logic here:
-    elif cols == oral_histories_sql_string_columns:
+    elif cols == oral_histories_sql_field_names:
         df_raw = df.clone()
 
         with engine.begin() as connection:
@@ -456,7 +458,7 @@ async def _upsert_into_db(file: File):
                 ),
                 df_raw.to_dicts(),
             )
-    elif cols == library_and_archives_sql_string_columns:
+    elif cols == library_and_archives_sql_field_names:
         df_raw = df.clone()
 
         with engine.begin() as connection:
@@ -588,7 +590,7 @@ async def _upsert_into_db(file: File):
                 ),
                 df_raw.to_dicts(),
             )
-    elif cols == slides_sql_string_columns:
+    elif cols == slides_sql_field_names:
         df_raw = df.clone()
         with engine.begin() as connection:
             connection.execute(
@@ -705,7 +707,7 @@ async def _upsert_into_db(file: File):
                 ),
                 df_raw.to_dicts(),
             )
-    elif cols == legacy_and_miscellaneous_items_report_sql_string_columns:
+    elif cols == legacy_and_miscellaneous_items_report_sql_field_names:
         df_raw = df.clone()
         with engine.begin() as connection:
             connection.execute(
@@ -856,7 +858,35 @@ async def _upsert_into_db(file: File):
                 ),
                 df_raw.to_dicts(),
             )
-
+    elif cols == collection_sql_field_names:
+        df_raw = df.clone()
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                        INSERT INTO collection_raw (
+                            sn,
+                            collection_name,
+                            acquisition_year,
+                            collection_description,
+                            gift_agreement_form
+                        ) VALUES (
+                            :sn,
+                            :collection_name,
+                            :acquisition_year,
+                            :collection_description,
+                            :gift_agreement_form
+                        ) ON CONFLICT (sn) 
+                            DO UPDATE
+                            SET
+                                collection_name = EXCLUDED.collection_name,
+                                acquisition_year = EXCLUDED.acquisition_year,
+                                collection_description = EXCLUDED.collection_description,
+                                gift_agreement_form = EXCLUDED.gift_agreement_form
+                                """
+                ),
+                df_raw.to_dicts(),
+            )
     else:
         raise HTTPException(
             status_code=422, detail="unable to decipher the catalog type"
@@ -920,6 +950,7 @@ async def delete_all_catalogue_data(
                     DELETE FROM slide_raw;
                     DELETE FROM library_and_archive_raw;
                     DELETE FROM legacy_and_miscellaneous_items_report_raw; 
+                    DELETE FROM collection_raw;
     """)
         )
     return {"ok": True, "message": "deleted all catalogue data"}

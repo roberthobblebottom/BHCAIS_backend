@@ -236,6 +236,14 @@ CREATE TABLE "legacy_and_miscellaneous_items_report_raw" (
     "web_url" VARCHAR ,
     "nas_link" VARCHAR 
 );
+
+CREATE TABLE "collection_raw"(
+  "sn" INTEGER PRIMARY KEY,
+    "collection_name" VARCHAR,
+      "acquisition_year" VARCHAR,
+      "collection_description" VARCHAR,
+      "gift_agreement_form" VARCHAR
+);
 -- CREATE TYPE "institution" AS ENUM (
 --   'LKCNHM'
 -- );

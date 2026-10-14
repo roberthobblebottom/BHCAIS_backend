@@ -230,7 +230,7 @@
 
 
 # SQL STRINGS #######################################
-print_sql_string_columns = [
+print_sql_field_names = [
     "continuous_sn_no",
     "uid",
     "album_no",
@@ -264,7 +264,7 @@ print_sql_string_columns = [
     "object_condition_qc2",
 ]
 
-oral_histories_sql_string_columns = [
+oral_histories_sql_field_names = [
     "sn",
     "name_of_interviewee",
     "name_of_interviewee_2",
@@ -290,7 +290,7 @@ oral_histories_sql_string_columns = [
     "comments",
 ]
 
-slides_sql_string_columns = [
+slides_sql_field_names = [
     "sn_no",
     "uid",
     "box_no",
@@ -327,7 +327,7 @@ slides_sql_string_columns = [
     "data_tier_2_or_3",
 ]
 
-library_and_archives_sql_string_columns = [
+library_and_archives_sql_field_names = [
     "sn",
     "category",
     "subcategory",
@@ -368,7 +368,7 @@ library_and_archives_sql_string_columns = [
     "transcription_file_media",
 ]
 
-negative_sql_string_columns = [
+negative_sql_field_names = [
     "sn_no",
     "uid",
     "ziplock_bag_no",
@@ -402,7 +402,7 @@ negative_sql_string_columns = [
 ]
 
 
-legacy_and_miscellaneous_items_report_sql_string_columns = [
+legacy_and_miscellaneous_items_report_sql_field_names = [
     "sn",
     "category",
     "catalog_number",
@@ -450,13 +450,22 @@ legacy_and_miscellaneous_items_report_sql_string_columns = [
     "nas_link",
 ]
 
+collection_sql_field_names = [
+    "sn",
+    "collection_name",
+    "acquisition_year",
+    "collection_description",
+    "gift_agreement_form",
+]
+
 get_header_dict = {
-    "print": print_sql_string_columns,
-    "oral_history": oral_histories_sql_string_columns,
-    "negative": negative_sql_string_columns,
-    "slide": slides_sql_string_columns,
-    "library_and_archive": library_and_archives_sql_string_columns,
-    "legacy_and_miscellaneous_items_report": legacy_and_miscellaneous_items_report_sql_string_columns,
+    "print": print_sql_field_names,
+    "oral_history": oral_histories_sql_field_names,
+    "negative": negative_sql_field_names,
+    "slide": slides_sql_field_names,
+    "library_and_archive": library_and_archives_sql_field_names,
+    "legacy_and_miscellaneous_items_report": legacy_and_miscellaneous_items_report_sql_field_names,
+    "collection": collection_sql_field_names,
 }
 
 passwordRegex = r"^(?=.*[a-z])(?=.*[0-9])\S{7,}$"
@@ -472,4 +481,5 @@ catalogue_names = [
     "slide",
     "library_and_archive",
     "legacy_and_miscellaneous_items_report",
+    "collection",
 ]
