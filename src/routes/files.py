@@ -1001,18 +1001,23 @@ async def download_files(
                     "AND" if "WHERE" in where_condition else "WHERE"
                 )  # Using OR returns too much back.
                 column3 = fieldAndSearchTermPair[0].split("__")[0]
+                varString = f"search_term_{fieldAndSearchTermPair[0]}_{fieldAndSearchTermPair[1].replace(',', '_comma_')}_{i}"
                 where_condition += (
-                    f" {keyword} {literal_column(column3)} = :search_term_{fieldAndSearchTermPair[0]}_{fieldAndSearchTermPair[1]}_{i}"
+                    f" {keyword} {literal_column(column3)} = ANY(:{varString})"
                     if "sn" in fieldAndSearchTermPair[0]
-                    and fieldAndSearchTermPair[1] is int
                     else ""
                     if "sn" in fieldAndSearchTermPair[0]
-                    and fieldAndSearchTermPair[1] is not int
-                    else f" {keyword} {literal_column(column3)} ILIKE :search_term_{fieldAndSearchTermPair[0]}_{fieldAndSearchTermPair[1]}_{i}"
+                    else f" {keyword} {literal_column(column3)} ILIKE :{varString}"
                 )
-                params[
-                    f"search_term_{fieldAndSearchTermPair[0]}_{fieldAndSearchTermPair[1]}_{i}"
-                ] = "%" + fieldAndSearchTermPair[1] + "%"
+                print(where_condition)
+                params[varString] = (
+                    "%" + fieldAndSearchTermPair[1] + "%"
+                    if "sn" not in fieldAndSearchTermPair[0]
+                    else [
+                        int(x)
+                        for x in fieldAndSearchTermPair[1].replace(" ", "").split(",")
+                    ]
+                )
             # for i, where_select_all_condition in enumerate(where_select_all_conditions):
             #     where_select_all_conditions[i] = (
             #         " WHERE " + where_select_all_condition
