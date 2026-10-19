@@ -166,7 +166,7 @@ async def _upsert_into_db(file: File):
                 text(
                     """
                             INSERT INTO print_raw (
-                                        continuous_sn_no ,
+                                        sn ,
                                         uid ,
                                         album_no ,
                                         object_condition_qc1 ,
@@ -198,7 +198,7 @@ async def _upsert_into_db(file: File):
                                         checked_by ,
                                         object_condition_qc2 
                             ) VALUES (
-                              :continuous_sn_no ,
+                              :sn ,
                                         :uid ,
                                         :album_no ,
                                         :object_condition_qc1 ,
@@ -229,7 +229,7 @@ async def _upsert_into_db(file: File):
                                         :date_of_qc ,
                                         :checked_by ,
                                         :object_condition_qc2 
-                            ) ON CONFLICT (continuous_sn_no) 
+                            ) ON CONFLICT (sn) 
                             DO UPDATE 
                             SET 
                                 uid = EXCLUDED.uid ,
@@ -274,7 +274,7 @@ async def _upsert_into_db(file: File):
                 text(
                     """
                         INSERT INTO negative_raw (
-                            sn_no ,
+                            sn ,
                             uid ,
                             ziplock_bag_no ,
                             object_condition_qc1 ,
@@ -305,7 +305,7 @@ async def _upsert_into_db(file: File):
                             checked_by ,
                             object_condition_qc2 
                         ) VALUES (
-                            :sn_no ,
+                            :sn ,
                             :uid ,
                             :ziplock_bag_no ,
                             :object_condition_qc1 ,
@@ -336,7 +336,7 @@ async def _upsert_into_db(file: File):
                             :checked_by ,
                             :object_condition_qc2 
                             )
-                        ON CONFLICT (sn_no) 
+                        ON CONFLICT (sn) 
                         DO UPDATE 
                         SET
                             uid = EXCLUDED.uid ,
@@ -597,7 +597,7 @@ async def _upsert_into_db(file: File):
                 text(
                     """
                         INSERT INTO slide_raw (
-                                    sn_no ,
+                                    sn ,
                                     uid ,
                                     box_no ,
                                     object_condition_qc1 ,
@@ -633,7 +633,7 @@ async def _upsert_into_db(file: File):
                                     data_tier_2_or_3 
 
                         ) VALUES (
-                                    :sn_no ,
+                                    :sn ,
                                     :uid ,
                                     :box_no ,
                                     :object_condition_qc1 ,
@@ -667,7 +667,7 @@ async def _upsert_into_db(file: File):
                                     :checked_by ,
                                     :object_condition_qc2 ,
                                     :data_tier_2_or_3 
-                            )ON CONFLICT (sn_no) 
+                            )ON CONFLICT (sn) 
                             DO UPDATE
                             SET
                                     uid = EXCLUDED.uid ,
