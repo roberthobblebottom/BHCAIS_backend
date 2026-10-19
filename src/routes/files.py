@@ -132,8 +132,8 @@ async def _upsert_into_db(file: File):
         raise ValueError(
             "The file " + file.filename + " is either empty or only contains header",
         )
-    cols = [col.lower().strip() for col in df.columns if col != ""]
-
+    cols = [col.lower().strip().replace(" ", "_") for col in df.columns if col != ""]
+    df.columns = cols
     if (
         cols != print_sql_field_names
         and cols != oral_histories_sql_field_names
