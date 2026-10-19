@@ -231,7 +231,7 @@
 
 # SQL STRINGS #######################################
 print_sql_field_names = [
-    "continuous_sn_no",
+    "sn",
     "uid",
     "album_no",
     "object_condition_qc1",
@@ -291,7 +291,7 @@ oral_histories_sql_field_names = [
 ]
 
 slides_sql_field_names = [
-    "sn_no",
+    "sn",
     "uid",
     "box_no",
     "object_condition_qc1",
@@ -369,7 +369,7 @@ library_and_archives_sql_field_names = [
 ]
 
 negative_sql_field_names = [
-    "sn_no",
+    "sn",
     "uid",
     "ziplock_bag_no",
     "object_condition_qc1",
