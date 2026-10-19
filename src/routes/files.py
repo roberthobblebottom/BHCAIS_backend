@@ -402,7 +402,7 @@ async def _upsert_into_db(file: File):
                                     interviewers ,
                                     associated_materials ,
                                     catalogued_by ,
-                                    catalogue_date ,
+                                    catalogued_date ,
                                     comments 
                         ) VALUES (
                                    :sn ,
@@ -426,7 +426,7 @@ async def _upsert_into_db(file: File):
                                     :interviewers ,
                                     :associated_materials ,
                                     :catalogued_by ,
-                                    :catalogue_date ,
+                                    :catalogued_date ,
                                     :comments 
                         ) ON CONFLICT (sn) 
                         DO UPDATE 
@@ -452,7 +452,7 @@ async def _upsert_into_db(file: File):
                                     interviewers = EXCLUDED.interviewers ,
                                     associated_materials = EXCLUDED.associated_materials ,
                                     catalogued_by = EXCLUDED.catalogued_by ,
-                                    catalogue_date = EXCLUDED.catalogue_date ,
+                                    catalogued_date = EXCLUDED.catalogued_date ,
                                     comments = EXCLUDED.comments 
                             """
                 ),

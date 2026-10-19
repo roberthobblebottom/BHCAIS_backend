@@ -286,7 +286,7 @@ oral_histories_sql_field_names = [
     "interviewers",
     "associated_materials",
     "catalogued_by",
-    "catalogue_date",
+    "catalogued_date",
     "comments",
 ]
 

@@ -65,7 +65,7 @@ CREATE TABLE "oral_history_raw" (
  "interviewers" VARCHAR,
  "associated_materials" VARCHAR,
  "catalogued_by" VARCHAR,
- "catalogue_date" VARCHAR,
+ "catalogued_date" VARCHAR,
  "comments" VARCHAR
 
 );
