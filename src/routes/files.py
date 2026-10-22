@@ -62,7 +62,7 @@ async def get_catalogue(
     order_by_sql_condition = (
         order_by_sql_condition + " DESC"
         if query.descending and order_by_sql_condition != ""
-        else ""
+        else order_by_sql_condition
     )
     row_count_params = {
         "sort_by": query.sort_by,
@@ -103,7 +103,6 @@ async def get_catalogue(
                 [params],
             ).all()
         ]
-
         return {"results": results, "row_counts": row_counts}
 
 
