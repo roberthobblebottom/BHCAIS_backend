@@ -5,7 +5,6 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import AfterValidator, BaseModel, EmailStr, Field
-
 from src.constants import catalogue_names, passwordError, passwordRegex
 
 router = APIRouter()
@@ -88,6 +87,6 @@ class DownloadFilesModel(BaseModel):
 
 
 class DeleteSelectedRowsModel(BaseModel):
-    ids_to_be_deleted: list[int, Field(json_schema_extra=True)]
+    ids_to_be_deleted: list[int] = Field(json_schema_extra=True)
     catalogue_name: Literal[*catalogue_names]
     current_primary_key: str

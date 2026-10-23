@@ -930,7 +930,7 @@ async def upload_files(
     """_summary_
 
     Args:
-        files (list[UploadFile]): _description_
+        files (list[UploadFile]):
         user_id (int, optional): _description_. Defaults to Query(...).
         email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
         background_tasks (BackgroundTasks, optional): _description_. Defaults to None.
@@ -983,7 +983,7 @@ async def delete_selected_rows(
 
 @router.delete("/DeleteAllCatalogueData")
 async def delete_all_catalogue_data(
-    email: str = Depends(route_auth_by_token),
+    email: str = Depends(admin_route_auth_by_token),
 ):
     """
 

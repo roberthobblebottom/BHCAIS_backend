@@ -95,7 +95,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def route_auth_by_token(header: Annotated[str, Header()]):
+# DO NO RENAME authorization into header, it will crash all routes and give 422 errors!
+def route_auth_by_token(authorization: Annotated[str, Header()]):
     """
     Args:
         header (Annotated[str, Header): packet header with the authentication token
@@ -113,7 +114,7 @@ def route_auth_by_token(header: Annotated[str, Header()]):
 
     # Extract bearer token from header
     try:
-        scheme, token = header.split()
+        scheme, token = authorization.split()
         if scheme.lower() != "bearer":
             print("scheme does not have bearer")
             raise credentials_exception
@@ -137,7 +138,7 @@ def route_auth_by_token(header: Annotated[str, Header()]):
     return email
 
 
-def admin_route_auth_by_token(header: Annotated[str, Header()]):
+def admin_route_auth_by_token(authorization: Annotated[str, Header()]):
     """
 
     Args:
@@ -158,7 +159,7 @@ def admin_route_auth_by_token(header: Annotated[str, Header()]):
 
     # Extract bearer token from header
     try:
-        scheme, token = header.split()
+        scheme, token = authorization.split()
         if scheme.lower() != "bearer":
             print("scheme does not have bear")
             raise credentials_exception

@@ -65,7 +65,7 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):  # noqa: B008
         "user_type": user[3],  # user[3] == user type
         "token": token,
     }
-    response = JSONResponse(content=content)
+    response = JSONResponse(content=content, media_type="application/json")
     time = 1800 * 100  # 50 Hours
     response.set_cookie(
         "Authorization",
