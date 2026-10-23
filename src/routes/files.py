@@ -127,7 +127,7 @@ async def _upsert_into_db(file: File):
     except NoDataError:
         raise ValueError("No Data in this file " + file.filename)
     df = df.with_columns(pl.all().cast(pl.String, strict=True))
-    if df.shape[0] <= 1:
+    if df.shape[0] < 1:
         raise ValueError(
             "The file " + file.filename + " is either empty or only contains header",
         )
