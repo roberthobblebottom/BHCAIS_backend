@@ -89,4 +89,3 @@ class DownloadFilesModel(BaseModel):
 class DeleteSelectedRowsModel(BaseModel):
     ids_to_be_deleted: list[int] = Field(json_schema_extra=True)
     catalogue_name: Literal[*catalogue_names]
-    current_primary_key: str

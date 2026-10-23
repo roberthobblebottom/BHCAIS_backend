@@ -36,17 +36,19 @@ async def get_catalogue(
     query: Annotated[GetCatalogueModel, Query()],
     email: str = Depends(route_auth_by_token),
 ):
-    """_summary_
+    """Get Catalogue data by catalog, pagination
+    and/or search term and/or order by
 
     Args:
-        query (Annotated[GetCatalogueModel, Query): _description_
-        email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
+        query (Annotated[GetCatalogueModel, Query): Data Model that includes catalogue name,
+                                pagination. optional: sort_by and search_term
+        email (str, optional): email for authenticating user. Defaults to Depends(route_auth_by_token).
 
     Raises:
-        HTTPException: _description_
+        HTTPException: Missing catalogue name
 
     Returns:
-        _type_: _description_
+        dict: catalogue data
     """
     if query.catalogue_name == "":
         raise HTTPException(
@@ -122,18 +124,18 @@ print_messages = []
 
 
 async def _upsert_into_db(file: File):
-    """_summary_
+    """function of the asynchronous background task for uploading data of a catalogue
 
     Args:
-        file (File): _description_
+        file (File): data in a file of a Catalog to be uploaded
 
     Raises:
-        ValueError: _description_
-        ValueError: _description_
-        ValueError: _description_
-        ValueError: _description_
-        ValueError: _description_
-        HTTPException: _description_
+        ValueError: Not csv or xlsx file
+        ValueError: file has no data at all
+        ValueError: file is empty or only contains header
+        ValueError: file is empty or only contains header
+        ValueError: file has missing serial number(s) (sn)
+        HTTPException: unable to decypher catalogue type
     """
     contents = await file.read()
     # Checking of validity of the files
@@ -923,27 +925,25 @@ async def _upsert_into_db(file: File):
 @router.post("/UploadFiles", status_code=202)
 async def upload_files(
     files: list[UploadFile],
-    user_id: int = Query(...),
     email: str = Depends(route_auth_by_token),
     background_tasks: BackgroundTasks = None,
 ):
-    """_summary_
+    """Initialise background tasks for the files received to be uploaded.
+    Background tasks only be executed after the response message is sent.
 
     Args:
-        files (list[UploadFile]):
-        user_id (int, optional): _description_. Defaults to Query(...).
-        email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
-        background_tasks (BackgroundTasks, optional): _description_. Defaults to None.
+        files (list[UploadFile]): data to be uploaded
+        email (str, optional): email for authenticating user. Defaults to Depends(route_auth_by_token).
+        background_tasks (BackgroundTasks, optional): Defaults to None.
 
     Returns:
-        _type_: _description_
+        dict: response message of initalisation
     """
-    results = []
     for file in files:
         print("pre check", file.filename)
 
         background_tasks.add_task(_upsert_into_db, file)
-    return {"uploaded_files": results}
+    return {"ok": True, "message": "initalised uploaded files in background"}
 
 
 @router.delete("/DeleteSelectedRows")
@@ -951,22 +951,21 @@ async def delete_selected_rows(
     model_instance: DeleteSelectedRowsModel,
     email: str = Depends(route_auth_by_token),
 ):
-    """_summary_
+    """
 
     Args:
-        model_instance (DeleteSelectedRowsModel): _description_
-        email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
+        model_instance (DeleteSelectedRowsModel): data model of selected catalog and to-be-deleted id(s)
+        email (str, optional): email for authenticating user. Defaults to Depends(route_auth_by_token).
 
     Returns:
-        _type_: _description_
+        dict: response message of sucessful deletion
     """
     with engine.begin() as connection:
         connection.execute(
             text(
                 f"""
         DELETE FROM {literal_column(model_instance.catalogue_name)}_raw 
-        WHERE {literal_column(model_instance.current_primary_key)} 
-        IN :ids_to_be_deleted
+        WHERE sn IN :ids_to_be_deleted
         """,
             )
             .bindparams(
@@ -985,13 +984,12 @@ async def delete_selected_rows(
 async def delete_all_catalogue_data(
     email: str = Depends(admin_route_auth_by_token),
 ):
-    """
+    """Admin only Function. Delete All data regardless of catalogues
 
     Args:
-        email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
-
+        email (str, optional): email for authenticating user. Defaults to Depends(route_auth_by_token).
     Returns:
-        _type_: _description_
+        dict: response message of successful deletion
     """
     with engine.begin() as connection:
         connection.execute(
@@ -1012,14 +1010,13 @@ async def download_files(
     search_params: DownloadFilesModel,
     email: str = Depends(route_auth_by_token),
 ):
-    """
+    """Sends rows of catalogue data to frontend in JSON format
 
     Note: Select all option removed
 
     Args:
         search_params (DownloadFilesModel): params of which files to download and constrainted by included search terms.
         email (str, optional): email for authenticating user. Defaults to Depends(route_auth_by_token).
-
     Raises:
         HTTPException: 422, "Missing selected catalogue names.
 
