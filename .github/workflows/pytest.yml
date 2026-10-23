@@ -20,7 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - name: Set up Python 3.12
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v7
       with:
         python-version: "3.12"
     - name: Install dependencies
@@ -54,9 +54,29 @@ jobs:
         uv run pytest ./src/tests/files_test.py -s
     
     - name: Test password_validation() function whether it catches validation violation
+      env:
+        user: 'postgres'
+        password: 'admin'
+        host: '127.0.0.1'
+        port: '5432'
+        database: 'postgres'
+        allowed_origin : 'http://localhost:5173'
+        prefix : ''
+        is_production : 'false' 
+        JWT_SECRET_KEY: 'sdfdsfdsf'
       run: |
         uv run pytest ./src/tests/password_validation_test.py -s
     
     - name: File Upload contraints violation unit testing
+      env:
+        user: 'postgres'
+        password: 'admin'
+        host: '127.0.0.1'
+        port: '5432'
+        database: 'postgres'
+        allowed_origin : 'http://localhost:5173'
+        prefix : ''
+        is_production : 'false' 
+        JWT_SECRET_KEY: 'sdfdsfdsf'
       run: |
         uv run pytest ./src/tests/test_upload_files_contraints_violation.py -s

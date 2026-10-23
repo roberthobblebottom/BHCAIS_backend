@@ -13,4 +13,4 @@ def test_password_validation():
             password_validation(p)
         error = str(e_info.value)
         print("EXPECTED ERROR:", error)
-        assert "HTTPException" not in error
+        assert "ValueError" in error
