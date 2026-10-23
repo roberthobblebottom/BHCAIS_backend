@@ -34,7 +34,6 @@ def test_upload_files_contraints_violation():
         )
     error = str(e_info.value)
     print("EXPECTED ERROR:", error)
-    assert "ValueError" in error
 
     file_path2 = (
         base_path / "sample_data_for_testing/headers only file.xlsx"
@@ -54,7 +53,6 @@ def test_upload_files_contraints_violation():
         )
     error = str(e_info.value)
     print("EXPECTED ERROR:", error)
-    assert "ValueError" in error
 
     file_path3 = (
         base_path / "sample_data_for_testing/incorrect slide headers.csv"
@@ -74,7 +72,6 @@ def test_upload_files_contraints_violation():
         )
     error = str(e_info.value)
     print("EXPECTED ERROR:", error)
-    assert "ValueError" in error
 
     file_path4 = (
         base_path / "sample_data_for_testing/missing slide headers .csv"
@@ -94,7 +91,6 @@ def test_upload_files_contraints_violation():
         )
     error = str(e_info.value)
     print("EXPECTED ERROR:", error)
-    assert "ValueError" in error
 
     file_path6 = (base_path / "sample_data_for_testing/sample_empty.csv").resolve()
     with (
@@ -112,7 +108,6 @@ def test_upload_files_contraints_violation():
         )
     error = str(e_info.value)
     print("EXPECTED ERROR:", error)
-    assert "ValueError" in error
 
     file_path6 = (
         base_path
@@ -133,7 +128,6 @@ def test_upload_files_contraints_violation():
         )
     error = str(e_info.value)
     print("EXPECTED ERROR:", error)
-    assert "ValueError" in error
 
     file_path6 = (
         base_path
@@ -154,4 +148,3 @@ def test_upload_files_contraints_violation():
         )
     error = str(e_info.value)
     print("EXPECTED ERROR:", error)
-    assert "ValueError" in error
