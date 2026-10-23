@@ -13,7 +13,7 @@ from fastapi import (
 from fastapi.responses import FileResponse
 from polars.exceptions import NoDataError
 from sqlalchemy import bindparam, literal_column
-from src.auth.jwthandler import route_auth_by_token
+from src.auth.jwthandler import admin_route_auth_by_token, route_auth_by_token
 from src.db.db_wrapper import engine, text
 from src.Models import DeleteSelectedRowsModel, DownloadFilesModel, GetCatalogueModel
 
@@ -985,7 +985,7 @@ async def delete_selected_rows(
 async def delete_all_catalogue_data(
     email: str = Depends(route_auth_by_token),
 ):
-    """_summary_
+    """
 
     Args:
         email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
@@ -1009,89 +1009,65 @@ async def delete_all_catalogue_data(
 
 @router.post("/DownloadFiles")
 async def download_files(
-    conditions: DownloadFilesModel,
+    search_params: DownloadFilesModel,
     email: str = Depends(route_auth_by_token),
 ):
-    """_summary_
+    """
+
+    Note: Select all option removed
 
     Args:
-        conditions (DownloadFilesModel): _description_
-        email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
+        search_params (DownloadFilesModel): params of which files to download and constrainted by included search terms.
+        email (str, optional): email for authenticating user. Defaults to Depends(route_auth_by_token).
 
     Raises:
-        HTTPException: _description_
+        HTTPException: 422, "Missing selected catalogue names.
 
     Yields:
-        _type_: _description_
+        dict: Json data of catalog(s)
     """
-    # Removed select all option
-    if conditions.selected_catalogues == []:
+    if search_params.selected_catalogues == []:
         raise HTTPException(422, "Missing selected catalogue names.")
-    for catalogue_name in conditions.selected_catalogues:
+    for catalogue_name in search_params.selected_catalogues:
         sql = f"""SELECT * FROM {literal_column(catalogue_name)}_raw"""
         where_condition = ""
-        # where_select_all_conditions = []
 
-        search_terms = conditions.search_terms
+        search_terms = search_params.search_terms
         params = {}
+
+        # Building SQL search terms if any
         if len(search_terms.keys()) != 0 and catalogue_name in search_terms:
-            for i, fieldAndSearchTermPair in enumerate(
+            for i, field_and_search_term_pair in enumerate(
                 search_terms[catalogue_name].items()
             ):
-                # if "select all" in fieldAndSearchTermPair[0].lower():
-                #     where_select_all_condition = ""
-                #     where_select_all_condition += "("
-                #     for j, column2 in enumerate(get_header_dict[catalogue_name]):
-                #         column2 = column2.split("__")[0]
-                #         keyword = "" if where_select_all_condition == "(" else "OR"
-                #         where_select_all_condition += (
-                #             f" {keyword} {literal_column(column2)} = :search_term_select_all_{fieldAndSearchTermPair[1]}_{j}"
-                #             if "sn" in column2 and fieldAndSearchTermPair[1] is int
-                #             else ""
-                #             if "sn" in column2 and fieldAndSearchTermPair[1] is not int
-                #             else f" {keyword} {literal_column(column2)} ILIKE :search_term_select_all_{fieldAndSearchTermPair[1]}_{j}"
-                #         )
-
-                #         params[
-                #             f"search_term_select_all_{fieldAndSearchTermPair[1]}_{j}"
-                #         ] = "%" + fieldAndSearchTermPair[1] + "%"
-
-                #     where_select_all_condition += ")"
-                #     where_select_all_conditions.append(where_select_all_condition)
-                #     continue
-
                 keyword = (
                     "AND" if "WHERE" in where_condition else "WHERE"
-                )  # Using OR returns too much back.
-                column3 = fieldAndSearchTermPair[0].split("__")[0]
-                varString = f"search_term_{fieldAndSearchTermPair[0]}_{fieldAndSearchTermPair[1].replace(',', '_comma_')}_{i}"
+                )  # Using OR returns too much back, so it is not used.
+
+                column_name = field_and_search_term_pair[0].split("__")[0]
+                variable_in_sql_string = f"search_term_{field_and_search_term_pair[0]}_{field_and_search_term_pair[1].replace(',', '_comma_')}_{i}"
+
                 where_condition += (
-                    f" {keyword} {literal_column(column3)} = ANY(:{varString})"
-                    if "sn" in fieldAndSearchTermPair[0]
-                    else ""
-                    if "sn" in fieldAndSearchTermPair[0]
-                    else f" {keyword} {literal_column(column3)} ILIKE :{varString}"
+                    f" {keyword} {literal_column(column_name)} = ANY(:{variable_in_sql_string})"
+                    if "sn" in field_and_search_term_pair[0]
+                    else f" {keyword} {literal_column(column_name)} ILIKE :{variable_in_sql_string}"
                 )
-                print(where_condition)
-                params[varString] = (
-                    "%" + fieldAndSearchTermPair[1] + "%"
-                    if "sn" not in fieldAndSearchTermPair[0]
+
+                # Formatting Params for the search terms
+                params[variable_in_sql_string] = (
+                    "%" + field_and_search_term_pair[1] + "%"
+                    if "sn" not in field_and_search_term_pair[0]
                     else [
                         int(x)
-                        for x in fieldAndSearchTermPair[1].replace(" ", "").split(",")
+                        for x in field_and_search_term_pair[1]
+                        .replace(" ", "")
+                        .split(",")
                     ]
                 )
-            # for i, where_select_all_condition in enumerate(where_select_all_conditions):
-            #     where_select_all_conditions[i] = (
-            #         " WHERE " + where_select_all_condition
-            #         if where_condition == "" and i == 0
-            #         else " OR " + where_select_all_condition
-            #         if where_select_all_condition != ""
-            #         else ""
-            #     )
+
         ful_sql = sql + where_condition
-        # for where_select_all_condition in where_select_all_conditions:
-        #     ful_sql += where_select_all_condition
+
+        # SQL Execution
         with engine.begin() as connection:
             result = connection.execute(
                 text(ful_sql),
@@ -1099,21 +1075,21 @@ async def download_files(
             ).all()
             yield {"catalogue_name": catalogue_name}
             if len(result) > 0:
-                for i, fieldAndSearchTermPair in enumerate(result):
-                    yield fieldAndSearchTermPair._asdict()
+                for i, field_and_search_term_pair in enumerate(result):
+                    yield field_and_search_term_pair._asdict()
             else:
                 yield {"message": "no results"}
 
 
 @router.get("/DownloadTemplatesForTheCatalogs")
 def download_templates_for_the_catalogs(email: str = Depends(route_auth_by_token)):
-    """_summary_
+    """Download templates with the correct column names of each catalogs
 
     Args:
-        email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
+        email (str, optional): email for authenticating user. Defaults to Depends(route_auth_by_token).
 
     Returns:
-        _type_: _description_
+        FileResponse: zip file for the templates.
     """
     file_path = "./templates for the catalogs.zip"
     return FileResponse(file_path, media_type="application/zip")
