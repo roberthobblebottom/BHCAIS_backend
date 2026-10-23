@@ -13,4 +13,4 @@ def test_password_validation():
             password_validation(p)
         error = str(e_info.value)
         print("EXPECTED ERROR:", error)
-        assert "442: " in error
+        assert "422: " in error
