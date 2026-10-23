@@ -1,11 +1,14 @@
 import os
 
-import polars as pl
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
 load_dotenv()
+"""Init Database
 
+    Returns:
+       Engine: SQLAlchemy Engine using psycopg2
+    """
 engine = None
 try:
     engine = create_engine(
@@ -27,19 +30,33 @@ except Exception as ex:  # noqa: BLE001
 
 
 def does_user_exist_in_db(email: str):
+    """
+
+    Args:
+        email (str): email that identifies user in login_user table
+
+    Returns:
+        Optional[Row[_TP]]: Returns something to indicate user exists
+    """
     with engine.begin() as connection:
         return connection.execute(
             text("SELECT 1 FROM login_user WHERE  email=:email"), [{"email": email}]
         ).first()
 
 
-def does_admin_exist_in_db(email: str, user_type: str):
+def does_admin_exist_in_db(email: str):
+    """
+
+    Args:
+        email (str): _email that identifies user in login_user table
+        user_type (str): user_type that helps check user is admin
+    Returns:
+        Optional[Row[_TP]]: Returns something to indicate such admin exists
+    """
     with engine.begin() as connection:
         return connection.execute(
-            text(
-                "SELECT 1 FROM login_user WHERE  email=:email AND user_type=:user_type"
-            ),
-            [{"email": email, "user_type": user_type}],
+            text("SELECT 1 FROM login_user WHERE  email=:email AND user_type=admin"),
+            [{"email": email}],
         ).first()
 
 

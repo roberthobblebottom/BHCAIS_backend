@@ -13,7 +13,7 @@ from fastapi import (
 from fastapi.responses import FileResponse
 from polars.exceptions import NoDataError
 from sqlalchemy import bindparam, literal_column
-from src.auth.jwthandler import admin_route_auth_by_token, route_auth_by_token
+from src.auth.jwthandler import route_auth_by_token
 from src.db.db_wrapper import engine, text
 from src.Models import DeleteSelectedRowsModel, DownloadFilesModel, GetCatalogueModel
 
@@ -36,6 +36,18 @@ async def get_catalogue(
     query: Annotated[GetCatalogueModel, Query()],
     email: str = Depends(route_auth_by_token),
 ):
+    """_summary_
+
+    Args:
+        query (Annotated[GetCatalogueModel, Query): _description_
+        email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
+
+    Raises:
+        HTTPException: _description_
+
+    Returns:
+        _type_: _description_
+    """
     if query.catalogue_name == "":
         raise HTTPException(
             422,
@@ -110,6 +122,19 @@ print_messages = []
 
 
 async def _upsert_into_db(file: File):
+    """_summary_
+
+    Args:
+        file (File): _description_
+
+    Raises:
+        ValueError: _description_
+        ValueError: _description_
+        ValueError: _description_
+        ValueError: _description_
+        ValueError: _description_
+        HTTPException: _description_
+    """
     contents = await file.read()
     # Checking of validity of the files
     print_messages.append("_upsert_into_db")
@@ -902,6 +927,17 @@ async def upload_files(
     email: str = Depends(route_auth_by_token),
     background_tasks: BackgroundTasks = None,
 ):
+    """_summary_
+
+    Args:
+        files (list[UploadFile]): _description_
+        user_id (int, optional): _description_. Defaults to Query(...).
+        email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
+        background_tasks (BackgroundTasks, optional): _description_. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """
     results = []
     for file in files:
         print("pre check", file.filename)
@@ -915,7 +951,15 @@ async def delete_selected_rows(
     model_instance: DeleteSelectedRowsModel,
     email: str = Depends(route_auth_by_token),
 ):
+    """_summary_
 
+    Args:
+        model_instance (DeleteSelectedRowsModel): _description_
+        email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
+
+    Returns:
+        _type_: _description_
+    """
     with engine.begin() as connection:
         connection.execute(
             text(
@@ -941,6 +985,14 @@ async def delete_selected_rows(
 async def delete_all_catalogue_data(
     email: str = Depends(route_auth_by_token),
 ):
+    """_summary_
+
+    Args:
+        email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
+
+    Returns:
+        _type_: _description_
+    """
     with engine.begin() as connection:
         connection.execute(
             text("""DELETE FROM print_raw;
@@ -960,6 +1012,18 @@ async def download_files(
     conditions: DownloadFilesModel,
     email: str = Depends(route_auth_by_token),
 ):
+    """_summary_
+
+    Args:
+        conditions (DownloadFilesModel): _description_
+        email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
+
+    Raises:
+        HTTPException: _description_
+
+    Yields:
+        _type_: _description_
+    """
     # Removed select all option
     if conditions.selected_catalogues == []:
         raise HTTPException(422, "Missing selected catalogue names.")
@@ -1039,6 +1103,20 @@ async def download_files(
                     yield fieldAndSearchTermPair._asdict()
             else:
                 yield {"message": "no results"}
+
+
+@router.get("/DownloadTemplatesForTheCatalogs")
+def download_templates_for_the_catalogs(email: str = Depends(route_auth_by_token)):
+    """_summary_
+
+    Args:
+        email (str, optional): _description_. Defaults to Depends(route_auth_by_token).
+
+    Returns:
+        _type_: _description_
+    """
+    file_path = "./templates for the catalogs.zip"
+    return FileResponse(file_path, media_type="application/zip")
 
 
 # def old_transformation_for_print(df, user_id):
@@ -1581,9 +1659,3 @@ async def download_files(
 #             )
 #     except IntegrityError as e:
 #         pass
-
-
-@router.get("/DownloadTemplatesForTheCatalogs")
-def download_templates_for_the_catalogs(email: str = Depends(route_auth_by_token)):
-    file_path = "./templates for the catalogs.zip"
-    return FileResponse(file_path, media_type="application/zip")

@@ -3,15 +3,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import AfterValidator, BaseModel, EmailStr, Field
 
 from src.constants import catalogue_names, passwordError, passwordRegex
 
 router = APIRouter()
-
-
-from src.auth.jwthandler import admin_route_auth_by_token, route_auth_by_token
 
 
 # Users
@@ -29,12 +26,7 @@ def password_validation(password: str) -> str:
 
 
 def password_validation_optional(password: str):
-    if password == "" or password == None:
-        print("1")
-        return ""
-    else:
-        print("2")
-        return password_validation(password)
+    return "" if password == "" or password == None else password_validation(password)
 
 
 class UserTypeEnum(str, Enum):

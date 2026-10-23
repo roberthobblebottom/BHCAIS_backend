@@ -27,16 +27,25 @@ from src.Models import (
     CreateUserForm,
     DeleteUserForm,
     EditUserForm,
-    password_validation,
 )
 
 router = APIRouter()
 
 
 @router.post("/Login")
-async def login(user: OAuth2PasswordRequestForm = Depends()):
+async def login(user: OAuth2PasswordRequestForm = Depends()):  # noqa: B008
+    """_summary_
+
+    Args:
+        user (OAuth2PasswordRequestForm, optional): _description_. Defaults to Depends().
+
+    Raises:
+        HTTPException: _description_
+
+    Returns:
+        _type_: _description_
+    """
     user = await validate_user(user, True)
-    # user = None
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -75,6 +84,21 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):
 async def change_password_route(
     form: ChangePasswordForm, email: str = Depends(admin_route_auth_by_token)
 ):
+    """_summary_
+
+    Args:
+        form (ChangePasswordForm): _description_
+        email (str, optional): _description_. Defaults to Depends(admin_route_auth_by_token).
+
+    Raises:
+        HTTPException: _description_
+        HTTPException: _description_
+        HTTPException: _description_
+        HTTPException: _description_
+
+    Returns:
+        _type_: _description_
+    """
     if (
         form.new_password != form.confirm_new_password
         or form.new_password == ""
@@ -102,6 +126,17 @@ async def change_password_route(
 
 @router.get("/GetAllUsers")
 async def get_all_users(email: str = Depends(admin_route_auth_by_token)):
+    """_summary_
+
+    Args:
+        email (str, optional): _description_. Defaults to Depends(admin_route_auth_by_token).
+
+    Raises:
+        HTTPException: _description_
+
+    Returns:
+        _type_: _description_
+    """
     try:
         with engine.begin() as connection:
             results = connection.execute(
@@ -116,6 +151,20 @@ async def get_all_users(email: str = Depends(admin_route_auth_by_token)):
 async def create_user(
     form: CreateUserForm, email: str = Depends(admin_route_auth_by_token)
 ):
+    """_summary_
+
+    Args:
+        form (CreateUserForm): _description_
+        email (str, optional): _description_. Defaults to Depends(admin_route_auth_by_token).
+
+    Raises:
+        HTTPException: _description_
+        HTTPException: _description_
+        HTTPException: _description_
+
+    Returns:
+        _type_: _description_
+    """
     if (
         form.password != form.confirm_password
         and form.password != ""
@@ -150,8 +199,22 @@ async def create_user(
 
 @router.put("/EditUser")
 async def edit_user(
-    form: EditUserForm = Body(...), email: str = Depends(admin_route_auth_by_token)
+    form: EditUserForm = Body(...),  # noqa: B008
+    email: str = Depends(admin_route_auth_by_token),
 ):
+    """_summary_
+
+    Args:
+        form (EditUserForm, optional): _description_. Defaults to Body(...).
+
+    Raises:
+        HTTPException: _description_
+        HTTPException: _description_
+        HTTPException: _description_
+
+    Returns:
+        _type_: _description_
+    """
     if (
         form.password != form.confirm_password
         and form.password != ""
@@ -204,6 +267,17 @@ async def edit_user(
 async def delete_user(
     form: DeleteUserForm, email: str = Depends(admin_route_auth_by_token)
 ):
+    """_summary_
+
+    Args:
+        form (DeleteUserForm): _description_
+        email (str, optional): _description_. Defaults to Depends(admin_route_auth_by_token).
+
+    Raises:
+        HTTPException: _description_
+        HTTPException: _description_
+        HTTPException: _description_
+    """
     user_id = form.user_id
     if user_id == None:
         raise HTTPException(422, "user_id is null")

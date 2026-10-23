@@ -1,5 +1,5 @@
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -22,6 +22,17 @@ def get_password_hash(password):
 async def _get_user(
     email: str,
 ):
+    """_summary_
+
+    Args:
+        email (str): _description_
+
+    Raises:
+        err: _description_
+
+    Returns:
+        _type_: _description_
+    """
     try:
         with engine.begin() as connection:
             result = connection.execute(
@@ -31,7 +42,6 @@ async def _get_user(
                 [{"email": email}],
             )
             result = result.all()
-    # if len(result) == 0:  # can't find email
     except ResourceClosedError as err:
         raise err("Cant find email:", email)
 
@@ -41,6 +51,16 @@ async def _get_user(
 async def _set_login_tries(
     email: str, login_tries: int, ban_expiry_date: datetime | None = None
 ):
+    """_summary_
+
+    Args:
+        email (str): _description_
+        login_tries (int): _description_
+        ban_expiry_date (datetime | None, optional): _description_. Defaults to None.
+
+    Raises:
+        err: _description_
+    """
     try:
         with engine.begin() as connection:
             connection.execute(
@@ -65,6 +85,18 @@ async def _set_login_tries(
 
 
 async def _get_login_tries(email: str):
+    """_summary_
+
+    Args:
+        email (str): _description_
+
+    Raises:
+        err: _description_
+        HTTPException: _description_
+
+    Returns:
+        _type_: _description_
+    """
     with engine.begin() as connection:
         try:
             result = connection.execute(
@@ -87,7 +119,7 @@ async def _get_login_tries(email: str):
 
         if ban_expiry_date is None:
             return login_tries
-        if datetime.now(timezone.utc).astimezone(SINGAPORE_TIMEZONE) < ban_expiry_date:
+        if datetime.now(UTC).astimezone(SINGAPORE_TIMEZONE) < ban_expiry_date:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Because of too many incorrect password attempts, You have been locked till "
@@ -99,6 +131,18 @@ async def _get_login_tries(email: str):
 
 
 async def _401_Exception(email: str, login_tries: int, enable_login_tries_count=False):
+    """Throws 401 Error
+
+    Args:
+        email (str): _description_
+        login_tries (int): _description_
+        enable_login_tries_count (bool, optional): _description_. Defaults to False.
+
+    Raises:
+        HTTPException: Incorrect username or password.  shows number of tries
+        HTTPException: _description_
+        HTTPException: _description_
+    """
     if not enable_login_tries_count:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -109,9 +153,9 @@ async def _401_Exception(email: str, login_tries: int, enable_login_tries_count=
 
     if login_tries % 3 == 0:
         extra_minutes = 5 * math.floor(login_tries / 3)
-        ban_expiry_date = datetime.now(timezone.utc).astimezone(
-            SINGAPORE_TIMEZONE
-        ) + timedelta(minutes=extra_minutes)
+        ban_expiry_date = datetime.now(UTC).astimezone(SINGAPORE_TIMEZONE) + timedelta(
+            minutes=extra_minutes
+        )
 
         await _set_login_tries(email, login_tries, ban_expiry_date)
         raise HTTPException(
@@ -131,6 +175,18 @@ async def validate_user(
     user: OAuth2PasswordRequestForm = Depends(),  # noqa: B008
     enable_login_tries_count=False,
 ):
+    """_summary_
+
+    Args:
+        user (OAuth2PasswordRequestForm, optional): _description_. Defaults to Depends().
+
+    Raises:
+        await: _description_
+        await: _description_
+
+    Returns:
+        _type_: _description_
+    """
     if enable_login_tries_count:
         login_tries = await _get_login_tries(user.username)
 
@@ -145,6 +201,15 @@ async def validate_user(
 
 
 async def change_password(email: str, salted_password: str):
+    """_summary_
+
+    Args:
+        email (str): _description_
+        salted_password (str): _description_
+
+    Raises:
+        err: _description_
+    """
     salted_password = get_password_hash(salted_password)
     try:
         with engine.begin() as connection:
