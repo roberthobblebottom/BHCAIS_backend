@@ -84,17 +84,17 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):  # noqa: B008
 async def change_password_route(
     form: ChangePasswordForm, email: str = Depends(admin_route_auth_by_token)
 ):
-    """_summary_
+    """
 
     Args:
         form (ChangePasswordForm): _description_
         email (str, optional): _description_. Defaults to Depends(admin_route_auth_by_token).
 
     Raises:
-        HTTPException: _description_
-        HTTPException: _description_
-        HTTPException: _description_
-        HTTPException: _description_
+        HTTPException: raises If form misses some attributes or new password not equals confirm new password
+        HTTPException: raises if Incorrect User name or password. 401 c-> 422
+        HTTPException: raises If form misses some attributes or new password not equals confirm new password
+        HTTPException: raise If no such table, no such column or no so such email
 
     Returns:
         _type_: _description_
@@ -106,7 +106,10 @@ async def change_password_route(
         or form.old_password == ""
         or form.username == ""
     ):
-        raise HTTPException(422, "password form is mulformed in some way")
+        raise HTTPException(
+            422,
+            "password form is mulformed in some way. form may have misses some attributes or new password not equals confirm new password",
+        )
     try:
         await validate_user(
             OAuth2PasswordRequestForm(
@@ -118,7 +121,10 @@ async def change_password_route(
     except HTTPException as exc:
         if exc.status_code == 401:
             raise HTTPException(422, "Incorrect username or password.") from exc
-        raise HTTPException(422, "password form is mulformed in some way")
+        raise HTTPException(
+            422,
+            "password form is mulformed in some way. form may have misses some attributes or new password not equals confirm new password",
+        )
     except (NoSuchTableError, NoSuchColumnError, ResourceClosedError) as e:
         raise HTTPException(500, e)
     return {"ok": True, "message": "sucessfully changed the password"}
@@ -126,16 +132,16 @@ async def change_password_route(
 
 @router.get("/GetAllUsers")
 async def get_all_users(email: str = Depends(admin_route_auth_by_token)):
-    """_summary_
+    """Admin Function to Get All Users
 
     Args:
-        email (str, optional): _description_. Defaults to Depends(admin_route_auth_by_token).
+        email (str, optional): email used to determine if user is an admin. Defaults to Depends(admin_route_auth_by_token).
 
     Raises:
-        HTTPException: _description_
+        HTTPException: raise If no such table, no such column or no so such email
 
     Returns:
-        _type_: _description_
+         Sequence[Row[_TP]]: User details
     """
     try:
         with engine.begin() as connection:
@@ -151,19 +157,19 @@ async def get_all_users(email: str = Depends(admin_route_auth_by_token)):
 async def create_user(
     form: CreateUserForm, email: str = Depends(admin_route_auth_by_token)
 ):
-    """_summary_
+    """Admin Function to create new user
 
     Args:
-        form (CreateUserForm): _description_
-        email (str, optional): _description_. Defaults to Depends(admin_route_auth_by_token).
+        form (CreateUserForm): details for the creation of user.
+        email (str, optional): email used to determine if user is an admin. Defaults to Depends(admin_route_auth_by_token).
 
     Raises:
-        HTTPException: _description_
-        HTTPException: _description_
-        HTTPException: _description_
+        HTTPException: password and confirm_password is not equal.
+        HTTPException: Email already in database
+        HTTPException: raise If no such table, no such column or no so such email
 
     Returns:
-        _type_: _description_
+        dict: message that user is sucessfully created.
     """
     if (
         form.password != form.confirm_password
@@ -202,18 +208,19 @@ async def edit_user(
     form: EditUserForm = Body(...),  # noqa: B008
     email: str = Depends(admin_route_auth_by_token),
 ):
-    """_summary_
+    """Admin Function for editing user details
 
     Args:
-        form (EditUserForm, optional): _description_. Defaults to Body(...).
+        form (EditUserForm, optional): data model for the editing of user details. Defaults to Body(...).
+        email (str, optional): email used to determine if user is an admin. Defaults to Depends(admin_route_auth_by_token).
 
     Raises:
-        HTTPException: _description_
-        HTTPException: _description_
-        HTTPException: _description_
+        HTTPException: password and confirm_password is not equal.
+        HTTPException: Email already in database
+        HTTPException: raise If no such table, no such column or no so such email
 
     Returns:
-        _type_: _description_
+        dict: message that user is sucessfully created.
     """
     if (
         form.password != form.confirm_password
@@ -267,16 +274,17 @@ async def edit_user(
 async def delete_user(
     form: DeleteUserForm, email: str = Depends(admin_route_auth_by_token)
 ):
-    """_summary_
+    """Admin Function to delete user.
 
     Args:
-        form (DeleteUserForm): _description_
-        email (str, optional): _description_. Defaults to Depends(admin_route_auth_by_token).
+        form (DeleteUserForm): user form that contains user id for identify user to be deleted.
+        email (str, optional): email used to determine if user is an admin. Defaults to Depends(admin_route_auth_by_token).
 
     Raises:
-        HTTPException: _description_
-        HTTPException: _description_
-        HTTPException: _description_
+        HTTPException: user id is null; invalid
+        HTTPException: user id is less than one; invalid
+        HTTPException: raise If no such table, no such column or no so such email
+
     """
     user_id = form.user_id
     if user_id == None:
