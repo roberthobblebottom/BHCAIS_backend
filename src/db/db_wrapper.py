@@ -55,7 +55,7 @@ def does_admin_exist_in_db(email: str):
     """
     with engine.begin() as connection:
         return connection.execute(
-            text("SELECT 1 FROM login_user WHERE  email=:email AND user_type=admin"),
+            text("SELECT 1 FROM login_user WHERE  email=:email AND user_type='admin'"),
             [{"email": email}],
         ).first()
 
