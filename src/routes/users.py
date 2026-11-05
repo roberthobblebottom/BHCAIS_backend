@@ -1,3 +1,4 @@
+import os
 from datetime import timedelta
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
@@ -30,6 +31,8 @@ from src.Models import (
 )
 
 router = APIRouter()
+
+IS_PRODUCTION = os.getenv("is_production", "false").lower() == "true"
 
 
 @router.post("/Login")
@@ -70,11 +73,11 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):  # noqa: B008
     response.set_cookie(
         "Authorization",
         value=f"Bearer {token}",
-        httponly=True,
+        httponly=not IS_PRODUCTION,
         max_age=time,
         expires=time,
-        samesite="Lax",
-        secure=False,
+        samesite="strict" if IS_PRODUCTION else "lax",
+        secure=IS_PRODUCTION,
     )
 
     return response
