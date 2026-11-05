@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.routes import files, users
 
 load_dotenv()
-app = FastAPI()
+app = FastAPI(redirect_slashes=False)
 
 # is required to make cross-origin requests
 # -- i.e., requests that originate from a different protocol, IP address, domain name, or port.
