@@ -10,7 +10,7 @@ app = FastAPI()
 
 # is required to make cross-origin requests
 # -- i.e., requests that originate from a different protocol, IP address, domain name, or port.
-# This is necessary since the vue frontend will run at http://localhost:8080.
+# This is necessary since the vue frontend will run at http://localhost:8000.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[os.getenv("allowed_origin")],
@@ -18,13 +18,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(users.router, prefix=os.getenv("prefix"))
 app.include_router(files.router, prefix=os.getenv("prefix"))
 
 
 @app.get("/api/status")
-def apoi_status():
+def api_status():
     return {"msg": "fastapi backend online"}
 
 

@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 
+from dotenv import load_dotenv
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -31,7 +32,7 @@ from src.Models import (
 )
 
 router = APIRouter()
-
+load_dotenv()
 IS_PRODUCTION = os.getenv("is_production", "false").lower() == "true"
 
 
