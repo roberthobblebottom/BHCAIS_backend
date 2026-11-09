@@ -70,13 +70,12 @@ async def login(user: OAuth2PasswordRequestForm = Depends()):  # noqa: B008
         "token": token,
     }
     response = JSONResponse(content=content, media_type="application/json")
-    time = 1800 * 100  # 50 Hours
+    time = (60 * 60 * 24 * 7,)  # 7 days, in seconds
     response.set_cookie(
         "Authorization",
         value=f"Bearer {token}",
         httponly=not IS_PRODUCTION,
         max_age=time,
-        expires=time,
         samesite="strict" if IS_PRODUCTION else "lax",
         secure=IS_PRODUCTION,
     )
